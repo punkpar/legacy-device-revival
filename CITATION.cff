@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+title: "Orphaned Device Reverse Engineering — HeKai/HK & Anyka AK3918"
+message: >-
+  If you use these protocol notes or tools in your own work, please cite this
+  repository. If you build on a specific finding, cite the repository and the
+  document (e.g. docs/time2-mip12/PROTOCOL.md).
+type: software
+authors:
+  - family-names: "Parcell"
+    given-names: "Ben"
+    alias: "punkpar"
+    website: "https://github.com/punkpar"
+repository-code: "https://github.com/punkpar/orphaned-devices"
+abstract: >-
+  Protocol documentation, original tooling and Home Assistant integrations for
+  cheap and end-of-life devices with no local API and no vendor support. Covers
+  the Time2 MIP12 IP camera (HeKai/HK P2P protocol, including WiFi provisioning)
+  and the Anyka AK3918 PTZ ("V380 clone", SD-card unlock + hardening). Structured
+  so further orphaned hardware (Android boxes, smartwatches, IoT gadgets) can be
+  documented the same way.
+keywords:
+  - reverse-engineering
+  - orphaned-devices
+  - interoperability
+  - firmware
+  - ip-camera
+  - hekai
+  - p2p
+  - anyka
+  - ak3918
+  - android
+  - smartwatch
+  - iot
+  - home-assistant
+  - rtsp
+  - e-waste
+  - reuse
+  - right-to-repair
+license: MIT
+version: "0.1.0"
+date-released: "2026-09-23"

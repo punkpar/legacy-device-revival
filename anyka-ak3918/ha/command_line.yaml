@@ -1,0 +1,46 @@
+# Anyka PTZ camera — Home Assistant command_line switches.
+#
+# Drop the list under `command_line:` in your configuration (or into a file
+# included via `!include command_line.yaml`).
+#
+# These are NOT optimistic switches: `command_state` reads the camera back, so HA
+# shows the real state even if it changed outside of HA.
+#
+# The key lives in /config/anyka_ptz_key on the HA box (one line, no newline) and
+# is read at call time with $(cat ...). Replace <CAMERA> with your camera host.
+
+command_line:
+  - switch:
+      name: "Anyka Motion Recording"
+      unique_id: anyka_motion_recording
+      icon: mdi:motion-sensor
+      command_on: >-
+        curl -s -m 25 -H "X-Ptz-Key: $(cat /config/anyka_ptz_key)"
+        "http://<CAMERA>/cgi-bin/ptz?cmd=motion_on"
+      command_off: >-
+        curl -s -m 25 -H "X-Ptz-Key: $(cat /config/anyka_ptz_key)"
+        "http://<CAMERA>/cgi-bin/ptz?cmd=motion_off"
+      command_state: >-
+        curl -s -m 10 -H "X-Ptz-Key: $(cat /config/anyka_ptz_key)"
+        "http://<CAMERA>/cgi-bin/ptz?cmd=motion"
+      value_template: "{{ 'motion: on' in value }}"
+      scan_interval: 60
+
+  # ⚠️ IR polarity was taken from the driver GPIO (gpio-ircut_a: 1 after `iron`,
+  #    0 after `iroff`) and was NOT visually confirmed. If it reads inverted in
+  #    daylight, swap command_on/command_off and use {{ value.endswith('1') }}.
+  - switch:
+      name: "Anyka Night Vision"
+      unique_id: anyka_night_vision
+      icon: mdi:weather-night
+      command_on: >-
+        curl -s -m 10 -H "X-Ptz-Key: $(cat /config/anyka_ptz_key)"
+        "http://<CAMERA>/cgi-bin/ptz?cmd=iroff"
+      command_off: >-
+        curl -s -m 10 -H "X-Ptz-Key: $(cat /config/anyka_ptz_key)"
+        "http://<CAMERA>/cgi-bin/ptz?cmd=iron"
+      command_state: >-
+        curl -s -m 10 -H "X-Ptz-Key: $(cat /config/anyka_ptz_key)"
+        "http://<CAMERA>/cgi-bin/ptz?cmd=ir"
+      value_template: "{{ value.endswith('0') }}"
+      scan_interval: 60

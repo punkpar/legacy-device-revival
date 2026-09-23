@@ -1,0 +1,51 @@
+#!/bin/bash
+
+readline() {
+  linetoread=$1
+  file=$2
+  sed $linetoread'q;d' $file
+}
+#https://www.freecodecamp.org/news/url-encoded-characters-reference/
+QUERY_STRING="${QUERY_STRING//&/ }"
+query_out=""
+for element in $QUERY_STRING; do
+  splitelement="${element//%/ %}"
+  for i in $splitelement; do
+    if [[ ${i:0:1} == "%" ]]; then
+      query_out="$query_out"$(printf "\x${i:1:2}")$(echo -n "${i:3}")
+    else
+      query_out="$query_out$i"
+    fi
+  done
+  query_out="$query_out "
+done
+QUERY_STRING="$query_out"
+
+# ---------------------------------------------------------------------------
+# SECURITY PATCH 2026-09-20 (Sarah):
+# The stock code ran `for i in $QUERY_STRING; do eval $i; done`, which gave
+# ANYONE able to reach port 80 PRE-AUTH ROOT COMMAND EXECUTION
+# (e.g. /cgi-bin/webui?x=;telnetd;). Replaced with a strict whitelist and
+# `export`, which assigns name=value WITHOUT evaluating the value.
+# ---------------------------------------------------------------------------
+SAFE_VARS="token command file undo scan webui_password webui_conf_password wifi_ssid wifi_password time_source time_zone ir_invert day_night_invert image_upside_down sensor_kern_module image_width image_height run_ftp run_telnet run_web_interface run_ptz_daemon ptz_invert ptz_init_on_boot run_libre_anyka run_snapshot md_record_sec ptzcmd key"
+for i in $QUERY_STRING; do
+  name="${i%%=*}"
+  value="${i#*=}"
+  case "$name" in
+    ""|*[!a-zA-Z0-9_]*) continue ;;
+  esac
+  ok=0
+  for v in $SAFE_VARS; do
+    if [ "$name" = "$v" ]; then ok=1; break; fi
+  done
+  if [ "$ok" = 1 ]; then export "$name=$value"; fi
+done
+
+echo "Content-type: text/html"
+echo ""
+
+# --- HA convenience: allow the shared key via an HTTP header (2026-09-21) ---
+if [ -n "$HTTP_X_PTZ_KEY" ]; then
+  QUERY_STRING="$QUERY_STRING key=$HTTP_X_PTZ_KEY"
+fi

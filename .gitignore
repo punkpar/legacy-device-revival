@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Secrets — never commit these
+.wificreds
+*.key
+*.pem
+.env
+.env.*
+secrets.yaml
+!secrets.append.yaml.example
+
+# Captures may contain credentials / device identifiers
+*.pcap
+*.pcapng
+*.cap
+captures/
+CAM_*.txt
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

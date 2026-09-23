@@ -1,0 +1,58 @@
+# Anyka PTZ camera — Home Assistant REST commands.
+#
+# Drop this under `rest_command:` in your configuration (or add the keys to an
+# existing `rest_command.yaml` included via `!include`).
+#
+# Auth: the shared key is sent as the `X-Ptz-Key` header so it never appears in a
+# URL or a log line. Put the real key in `secrets.yaml`:
+#
+#     anyka_ptz_key: "<key from /etc/jffs2/ptz.key on the camera>"
+#
+# Replace <CAMERA> with your camera's IP / hostname.
+
+# Move. Call with any whitelisted command, e.g. {"cmd": "left"}:
+#   init up down left right left_up right_up left_down right_down
+anyka_ptz:
+  url: "http://<CAMERA>/cgi-bin/ptz?cmd={{ cmd }}"
+  method: GET
+  headers:
+    X-Ptz-Key: !secret anyka_ptz_key
+  timeout: 15
+
+anyka_ptz_init:
+  url: "http://<CAMERA>/cgi-bin/ptz?cmd=init"
+  method: GET
+  headers:
+    X-Ptz-Key: !secret anyka_ptz_key
+  timeout: 20
+
+# iron  = IR-cut filter IN  -> colour / daytime
+# iroff = IR-cut filter OUT -> greyscale / night vision
+anyka_ir_on:
+  url: "http://<CAMERA>/cgi-bin/ptz?cmd=iron"
+  method: GET
+  headers:
+    X-Ptz-Key: !secret anyka_ptz_key
+  timeout: 15
+
+anyka_ir_off:
+  url: "http://<CAMERA>/cgi-bin/ptz?cmd=iroff"
+  method: GET
+  headers:
+    X-Ptz-Key: !secret anyka_ptz_key
+  timeout: 15
+
+# Motion recording restarts libre_anyka_app with -m <seconds>, so allow longer.
+anyka_motion_on:
+  url: "http://<CAMERA>/cgi-bin/ptz?cmd=motion_on"
+  method: GET
+  headers:
+    X-Ptz-Key: !secret anyka_ptz_key
+  timeout: 30
+
+anyka_motion_off:
+  url: "http://<CAMERA>/cgi-bin/ptz?cmd=motion_off"
+  method: GET
+  headers:
+    X-Ptz-Key: !secret anyka_ptz_key
+  timeout: 30

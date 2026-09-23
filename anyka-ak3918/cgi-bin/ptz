@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+# Anyka camera control endpoint for Home Assistant.
+#   Added 2026-09-20.  Requires key file /etc/jffs2/ptz.key.
+#   Commands are WHITELISTED. Only shell builtins + sed/grep/cat are used
+#   (this busybox has no `tr`, `cut`, or `base64` in PATH for CGI).
+#
+#   PTZ / IR  : init up down left right left_up right_up left_down right_down
+#               irinit iron iroff
+#   Motion    : motion (report)   motion_on   motion_off
+#   IR        : ir (report)  iron (filter in = day/colour)  iroff (filter out = night)
+#
+echo "Content-type: text/plain"
+echo ""
+
+QS="$QUERY_STRING"
+
+# Accept the shared key via HTTP header too (X-Ptz-Key) so HA can use a
+# rest_command header instead of putting the secret in the URL.
+if [ -n "$HTTP_X_PTZ_KEY" ]; then
+  QS="$QS&key=$HTTP_X_PTZ_KEY"
+fi
+KEYFILE=/etc/jffs2/ptz.key
+SETTINGS=/etc/jffs2/gergesettings.txt
+SD_SETTINGS=/mnt/anyka_hack/gergesettings.txt
+
+getval() {
+  _k="$1"; _rest="$QS"
+  while [ -n "$_rest" ]; do
+    _part="${_rest%%&*}"
+    case "$_part" in
+      "$_k="*) printf '%s' "${_part#*=}"; return 0 ;;
+    esac
+    [ "$_part" = "$_rest" ] && break
+    _rest="${_rest#*&}"
+  done
+  printf '%s' ""
+}
+
+SUPPLIED=$(getval key)
+CMD=$(getval cmd)
+
+EXPECTED=""
+[ -f "$KEYFILE" ] && EXPECTED=$(cat "$KEYFILE")
+
+if [ -z "$EXPECTED" ] || [ "$SUPPLIED" != "$EXPECTED" ]; then
+  echo "unauthorized"
+  exit 0
+fi
+
+# ---- helpers --------------------------------------------------------------
+motion_sec() {
+  _l=$(grep '^md_record_sec=' "$SETTINGS" 2>/dev/null)
+  printf '%s' "${_l#*=}"
+}
+
+set_motion_sec() {
+  sed "s/^md_record_sec=.*/md_record_sec=$1/" "$SETTINGS" > /tmp/ge.tmp
+  cp /tmp/ge.tmp "$SETTINGS"
+  [ -f "$SD_SETTINGS" ] && cp /tmp/ge.tmp "$SD_SETTINGS"
+}
+
+restart_app() {
+  # Stop the running app; app_restarter.sh would bring it back on its own,
+  # but we start it immediately so HA sees the change without a 20s wait.
+  killall libre_anyka_app 2>/dev/null
+  killall run_libre_anyka_app.sh 2>/dev/null
+  sleep 1
+  nohup /mnt/anyka_hack/libre_anyka_app/run_libre_anyka_app.sh >/dev/null 2>&1 &
+}
+
+# ---- dispatch -------------------------------------------------------------
+case "$CMD" in
+  init)       echo "init_ptz"      > /tmp/ptz.daemon ;;
+  up)         echo "up"            > /tmp/ptz.daemon ;;
+  down)       echo "down"          > /tmp/ptz.daemon ;;
+  left)       echo "left"          > /tmp/ptz.daemon ;;
+  right)      echo "right"         > /tmp/ptz.daemon ;;
+  left_up)    echo "left_up"       > /tmp/ptz.daemon ;;
+  right_up)   echo "right_up"      > /tmp/ptz.daemon ;;
+  left_down)  echo "left_down"     > /tmp/ptz.daemon ;;
+  right_down) echo "right_down"    > /tmp/ptz.daemon ;;
+  irinit)     echo "init_ir"       > /tmp/ptz.daemon ;;
+  iron)       echo "set_ir_cut 1"  > /tmp/ptz.daemon ;;
+  iroff)      echo "set_ir_cut 0"  > /tmp/ptz.daemon ;;
+  motion)
+    _s=$(motion_sec)
+    if [ "$_s" = "0" ] || [ -z "$_s" ]; then echo "motion: off"; else echo "motion: on (${_s}s)"; fi
+    exit 0 ;;
+  ir)
+    # Raw IR-cut filter state. 1 = filter in the light path (colour / day),
+    # 0 = filter removed (sensor sees IR -> greyscale / night vision).
+    _ir=$(cat /sys/user-gpio/gpio-ircut_a 2>/dev/null)
+    echo "ir: $_ir"
+    exit 0 ;;
+  motion_on)
+    set_motion_sec 10
+    restart_app
+    echo "motion: on (10s) - app restarting" ;;
+  motion_off)
+    set_motion_sec 0
+    restart_app
+    echo "motion: off - app restarting" ;;
+  *)          echo "bad command"; exit 0 ;;
+esac
+echo "ok: $CMD"
