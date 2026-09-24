@@ -1,0 +1,85 @@
+# =============================================================================
+#  Wake a PC when a BLE gamepad powers on: Home Assistant package
+# =============================================================================
+#  Copy this into your Home Assistant `packages/` directory and replace the
+#  PLACEHOLDERS. It is a PACKAGE, so `automation:` must be a MAPPING key -- a bare
+#  top-level list will be silently ignored.
+#
+#  🔴 FILENAME SLUG: Home Assistant requires a valid slug -- underscores, no
+#     hyphens. `pc_wake_by_gamepad.yaml` works; `pc-wake-by-gamepad.yaml` is
+#     rejected with "invalid slug".
+#
+#  HOW IT WORKS
+#    A BLE proxy on a USB port that stays powered in S5 relays the gamepad's
+#    advertisement to Home Assistant. A presence integration (e.g. Bermuda) turns
+#    that into a device_tracker. This automation watches that tracker and sends a
+#    Wake-on-LAN magic packet.
+#
+#  WHY IT CANNOT FALSE-FIRE (usually)
+#    A gamepad that is CONNECTED to the PC is silent -- it has no reason to
+#    advertise. It only advertises when it has no host, i.e. when the PC is off.
+#    So the trigger fires precisely when you want it. If you have a second pad or
+#    another device sharing the manufacturer ID, trigger on the EXACT address.
+#
+#  ⚠️ PLACEHOLDERS TO REPLACE
+#    device_tracker.YOUR_GAMEPAD_TRACKER   the tracker entity for your pad
+#    binary_sensor.YOUR_PC_STATUS          a connectivity sensor for the PC
+#                                          (ping / device_tracker / router)
+#    AA:BB:CC:DD:EE:FF                     your PC's ETHERNET NIC MAC
+#    192.168.1.255                         your LAN broadcast address
+# =============================================================================
+
+automation:
+  - id: pc_wake_by_gamepad
+    alias: "PC wake on gamepad"
+    description: >-
+      A BLE gamepad powered on near a live-in-S5 proxy. Wake the PC.
+    triggers:
+      - trigger: state
+        entity_id: device_tracker.YOUR_GAMEPAD_TRACKER
+        from: "not_home"
+        to: "home"
+    conditions:
+      # Only act when the PC is actually off. A magic packet is harmless if the PC
+      # is up, but this keeps the log clean and avoids pointless network traffic.
+      #
+      # NOTE: a PC that is off often reports `unknown` or `unavailable` rather than
+      # `off`, so all three are accepted. Narrow this if your sensor is reliable.
+      - condition: template
+        value_template: >-
+          {{ states('binary_sensor.YOUR_PC_STATUS')
+             in ['off', 'unknown', 'unavailable'] }}
+    actions:
+      # Two packets: one for the NIC, one to survive packet loss. A single magic
+      # packet is occasionally dropped.
+      - action: wake_on_lan.send_magic_packet
+        data:
+          mac: "AA:BB:CC:DD:EE:FF"
+          broadcast_address: "192.168.1.255"
+      - delay:
+          seconds: 2
+      - action: wake_on_lan.send_magic_packet
+        data:
+          mac: "AA:BB:CC:DD:EE:FF"
+          broadcast_address: "192.168.1.255"
+    # `single` + `max_exceeded: silent` stops a flapping tracker (see the README's
+    # note on short presence timeouts) from queueing a burst of wakes.
+    mode: single
+    max_exceeded: silent
+
+# -----------------------------------------------------------------------------
+# Optional: a manual "is the port live in S5?" check you can run from HA.
+# Run it with the PC OFF and confirm it reports the proxy as reachable.
+# -----------------------------------------------------------------------------
+script:
+  check_proxy_survives_s5:
+    alias: "Check BLE proxy survives S5"
+    mode: single
+    sequence:
+      - action: persistent_notification.create
+        data:
+          title: "S5 port check"
+          message: >-
+            Replace this with a ping/binary_sensor for your proxy and read its state.
+            Expected with the PC OFF: the proxy is REACHABLE (port stays powered).
+            Proxy state now: {{ states('binary_sensor.YOUR_PROXY_STATUS') }}

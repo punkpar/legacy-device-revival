@@ -94,6 +94,99 @@ hack.
 
 ---
 
+## Tesco Hudl 2
+
+### The vulnerability
+
+| Resource | Link | Why it matters |
+|----------|------|----------------|
+| Dirty COW, CVE-2016-5195 (NVD) | <https://nvd.nist.gov/vuln/detail/CVE-2016-5195> | The kernel race (COW on private read-only mappings, `get_user_pages` vs `/proc/self/mem`). Affects Linux 2.6.22 to 4.8.3; this device is on **3.10.62**. |
+| Dirty COW project page | <https://dirtycow.ninja> | The original disclosure and links to the public PoCs. |
+| `timwr/CVE-2016-5195` | <https://github.com/timwr/CVE-2016-5195> | The widely-used **Android** port of the Dirty COW PoC (the `dcow` binary used here). **Third-party: not redistributed in this repo.** |
+
+### Android `run-as` and SELinux
+
+| Resource | Link | Why it matters |
+|----------|------|----------------|
+| Android `run-as` (source) | <https://cs.android.com/android/platform/superproject/+/master:system/core/run-as/run-as.cpp> | `run-as` is setuid-root and the entry point into the `runas` domain: the property the technique exploits. |
+| Android SELinux (AOSP docs) | <https://source.android.com/docs/security/features/selinux> | Domain model; why a `uid=0` process is still confined by its domain. |
+| `capabilities(7)` (Linux man-pages) | <https://man7.org/linux/man-pages/man7/capabilities.7.html> | `CAP_SYS_MODULE` and the bounding/effective sets: why `init_module()` returns `EPERM`, not `EACCES`. |
+| Sean Pesce: Android kernel module loading & SELinux | <https://seanpesce.blogspot.com/> | The `init_module()` vs `finit_module()` distinction (SELinux checks the **process** vs the **file**) that the probe is built around. |
+
+### Device references
+
+| Resource | Link | Status |
+|----------|------|--------|
+| Tesco Hudl (Wikipedia) | <https://en.wikipedia.org/wiki/Tesco_Hudl> | 🔴 The Hudl line was **discontinued**; Tesco shut the Hudl services and store. |
+| Intel Atom Z3735 (ARK) | <https://www.intel.com/content/www/us/en/products/sku/80274/intel-atom-processor-z3735f-2m-cache-up-to-1-83-ghz/specifications.html> | Bay Trail SoC family reference (see `docs/hudl2/README.md` §1 on the D/G suffix ambiguity). |
+| Pegatron / `octagon` board | *no public documentation* | The board id (`ro.build.flavor = octagon_64p-user`) is only recoverable from the device's own build props. |
+
+---
+
+## KAWA MINI 3 Pro
+
+### Vendor & device
+
+| Resource | Link | Status |
+|----------|------|--------|
+| KAWA official product page | <https://www.kawa-in.com/products/mini-3-pro> | ✅ live |
+| KAWA FCC filing (`2AZWZ-MINI3`) | <https://fccid.io/2AZWZ-MINI3> | ✅ schematics, block diagrams |
+| KAWA user manual | <https://device.report/manual/18299064> | ✅ PDF |
+
+### SigmaStar / dashcam reverse-engineering
+
+| Resource | Link | Why it matters |
+|----------|------|----------------|
+| GoPrawn SigmaStar/MStar cam thread (archived) | <https://web.archive.org/web/20220325143203/https://www.goprawn.com/forum/sigmastar-mstar-ait-cams/12766-ait-mstar-sigmastar-cams-hacks> | The SigmaStar CGI API and LIVE555 config that name the RTSP path family. |
+| DDPAI reverse-engineering write-up | <https://www.eionix.co.in/2019/10/10/reverse-engineer-ddpai-firmware.html> | Port 6200, REST API, full API list. |
+| `pwrtux/visiondash` (DDPAI tool) | <https://github.com/pwrtux/visiondash/blob/main/ddpai_tool.py> | Where `/liveRTSP/av4` was confirmed; shared SDK with KAWA. |
+| DashCamTalk: reverse-engineering web APIs | <https://dashcamtalk.com/forum/threads/reverse-engineering-web-api-live-feed-etc.21057/> | General dashcam RE patterns. |
+| SigmaStar SDK docs (sensor-to-RTSP) | <https://doc.comake.online/d2_sigdoc_en/customer/IPC/Development/sensor_to_rtsp_en.html> | The `libmi_*` MI pipeline. |
+| OpenIPC | <https://openipc.org/> | Open firmware for IP cameras (adjacent ecosystem). |
+| LIVE555 | <http://www.live555.com/liveMedia/> | The RTSP server library reported in the SDP. |
+| CamioCam RTSP paths | <https://github.com/CamioCam/rtsp> | Common camera RTSP path lists. |
+| GitHub `topics/sigmastar` | <https://github.com/topics/sigmastar> | Community projects. |
+
+---
+
+## GeekMagic SmallTV-Ultra
+
+| Resource | Link | Why it matters |
+|----------|------|----------------|
+| Vendor repo `GeekMagicClock/smalltv-ultra` | <https://github.com/GeekMagicClock/smalltv-ultra> | Per-model firmware; the source of the version/downgrade warning. |
+| Custom firmware: `bvweerd/geekmagic-tv-esp8266` | <https://github.com/bvweerd/geekmagic-tv-esp8266> | MIT ESP8266 replacement (local, random AP password, mDNS). |
+| Custom firmware fork: `aydarik/geekmagic-tv-esp8266` | <https://github.com/aydarik/geekmagic-tv-esp8266> | EU characters, themes, messaging. |
+| Home Assistant integration: `adrienbrault/geekmagic-hacs` | <https://github.com/adrienbrault/geekmagic-hacs> | Renders HA dashboards on the clock via Pillow/Blitz. |
+| ESPHome (adjacent ESP ecosystem) | <https://esphome.io/> | For replacing the stock firmware with a fully local build. |
+
+---
+
+## Wake a PC from a Bluetooth gamepad
+
+### Prior art
+
+| Source | Link | Notes |
+|--------|------|-------|
+| PC Wake Dongle (kungaa) | <https://github.com/kungaa/PC-wake-dongle> | The reference implementation: a Pico W / Pico 2 W USB dongle (TinyUSB HID + BTstack LE scan + lwIP) that wakes a PC on a BLE device's advert. Its **"What works / what doesn't"** table is the clearest public statement of the Bluetooth-Classic vs BLE split: Xbox Series pads advertise; DualSense / DualShock 4 / Switch Pro (Classic only) cannot. |
+| DS5Dongle (awalol) | <https://github.com/awalol/DS5Dongle> | Origin of the USB remote-wakeup state machine the PC Wake Dongle reuses. |
+| ESPHome `bluetooth_proxy` | <https://esphome.io/components/bluetooth_proxy/> | The component that does the listening. |
+| Bermuda BLE Trilateration (agittins) | <https://github.com/agittins/bermuda> | Turns proxy-relayed adverts into a `device_tracker`. |
+| HA `private_ble_device` | <https://www.home-assistant.io/integrations/private_ble_device/> | Required if the device rotates its address (IRK path). |
+| Bluetooth Core Spec, Vol 6 Part B §1.3.2.2 | <https://www.bluetooth.com/specifications/specs/core-specification/> | Defines the `ah` resolving function and the RPA layout used by `verify-irk.py`. |
+
+### Vendor documentation (BIOS standby-USB settings)
+
+| Source | Link | Notes |
+|--------|------|-------|
+| ASRock FAQ 444 | <https://www.asrock.com/support/faq.asp?id=444> | "USB port power can be turned off by **enabling** Deep Sleep… adjust to *Enabled in S5*." |
+| ASRock TSDQA-132 (PDF) | <https://www.asrock.com/support/qa/TSDQA-132.pdf> | The same answer as a technical Q&A sheet. |
+
+> The exact menu path differs per vendor and per board: ASRock uses **Deep Sleep**,
+> ASUS/MSI use **ErP Ready**, Gigabyte uses **ErP**. See
+> [`pc-wake-by-ble-gamepad/README.md`](pc-wake-by-ble-gamepad/README.md) Step 0.
+
+---
+
 ## Legal authorities
 
 | Source | Link |

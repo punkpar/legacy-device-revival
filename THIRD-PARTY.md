@@ -14,7 +14,8 @@ A Python implementation of the HeKai/HK ("P2P") LAN protocol, vendored with a sm
 protocol patch for the Time2 MIP12.
 
 - **Upstream**: `indykoning/PyPI_p2pcam`
-- **Licence**: **MIT** (Copyright (c) 2019 Indy Koning)
+- **Licence**: **MIT** (Copyright (c) 2019 Indy Koning); the upstream notice is kept
+  verbatim in [`time2-mip12/p2pcam/LICENSE`](time2-mip12/p2pcam/LICENSE)
 - **Patch**: commit adding packet-length handling for the Time2 MIP12, plus a fork PR
   (`devmlb` #3). The `local_port=0` fix (see `docs/time2-mip12/PROTOCOL.md`) is applied
   on top.
@@ -36,10 +37,23 @@ quoted, it is for interoperability research only.
 | `hkipc.h`, `HKCameraControl.h` (SDK headers) | HeKai SDK vendor | ❌ not included |
 | Anyka stock firmware / `anyka_ipc` binaries | Anyka | ❌ not included |
 | VGerris `Anyka_ak3918_hacking_journey` SD-card payload | VGerris (community) | ❌ not included (see upstream) |
+| Dirty COW exploit (`dcow`) for Android | the Dirty COW authors (public PoC) | ❌ not included (see below) |
+| Tesco Hudl 2 stock firmware / `run-as` binary | Tesco / Pegatron / Google | ❌ not included |
+| KAWA MINI 3 Pro firmware / `cardv` / `libmi_*.so` | KAWA / SigmaStar | ❌ not included |
+| GeekMagic SmallTV-Ultra stock firmware | GeekMagic | ❌ not included |
 
 The Anyka SD-card exploit itself is **community work by VGerris**
 (`github.com/VGerris/Anyka_ak3918_hacking_journey`). This repo documents *how to use it
 and harden the result*; get the payload from upstream.
+
+### Dirty COW (CVE-2016-5195)
+
+The Hudl 2 write-up relies on the **Dirty COW** kernel bug. The exploit binary used to
+trigger it (`dcow`) is a **public, third-party PoC** and is **not** redistributed here;
+build or obtain it from the upstream project (see
+[`docs/REFERENCES.md`](docs/REFERENCES.md) → Hudl 2). What *is* original in this repo is
+the **payload written over `/system/bin/run-as`**, the **SELinux/capability probe**, and
+the analysis in [`docs/hudl2/ROOTING.md`](docs/hudl2/ROOTING.md).
 
 ---
 

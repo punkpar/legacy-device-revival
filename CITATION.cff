@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "Legacy Device Revival: Orphaned Device Reverse Engineering (HeKai/HK & Anyka AK3918)"
+title: "Legacy Device Revival: Orphaned Device Reverse Engineering (HeKai/HK, Anyka AK3918, Tesco Hudl 2, KAWA & GeekMagic)"
 message: >-
   If you use these protocol notes or tools in your own work, please cite this
   repository. If you build on a specific finding, cite the repository and the
@@ -14,10 +14,14 @@ repository-code: "https://github.com/punkpar/legacy-device-revival"
 abstract: >-
   Protocol documentation, original tooling and Home Assistant integrations for
   cheap and end-of-life devices with no local API and no vendor support. Covers
-  the Time2 MIP12 IP camera (HeKai/HK P2P protocol, including WiFi provisioning)
-  and the Anyka AK3918 PTZ ("V380 clone", SD-card unlock + hardening). Structured
-  so further orphaned hardware (Android boxes, smartwatches, IoT gadgets) can be
-  documented the same way.
+  the Time2 MIP12 IP camera (HeKai/HK P2P protocol, including WiFi provisioning),
+  the Anyka AK3918 PTZ ("V380 clone", SD-card unlock + hardening), the Tesco
+  Hudl 2 tablet (rooted without a bootloader unlock via run-as + Dirty COW, with
+  the SELinux/capability ceiling documented), the KAWA MINI 3 Pro dashcam
+  (SigmaStar: unauthenticated RTSP, root shell and HTTP filesystem), and the
+  GeekMagic SmallTV-Ultra weather clock (ESP8266 HTTP API). Structured so further
+  orphaned hardware (Android boxes, smartwatches, IoT gadgets) can be documented
+  the same way.
 keywords:
   - reverse-engineering
   - orphaned-devices
@@ -29,6 +33,13 @@ keywords:
   - anyka
   - ak3918
   - android
+  - android-tablet
+  - dirty-cow
+  - cve-2016-5195
+  - selinux
+  - dashcam
+  - sigmastar
+  - esp8266
   - smartwatch
   - iot
   - home-assistant

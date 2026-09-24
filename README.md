@@ -55,11 +55,24 @@ Start with the docs for the device you own:
   [`HOME-ASSISTANT.md`](docs/time2-mip12/HOME-ASSISTANT.md) (integration).
 - [`docs/anyka-ak3918/`](docs/anyka-ak3918/): the SD-card unlock, hardening and HA
   integration.
+- [`docs/hudl2/`](docs/hudl2/): rooting a **hardware-locked** Bay Trail tablet via
+  `run-as` + Dirty COW, and the SELinux/capability ceiling that stops it short of a full
+  root.
+- [`docs/kawa-mini-3-pro/`](docs/kawa-mini-3-pro/): a SigmaStar dashcam's unauthenticated
+  RTSP stream, root shell and HTTP filesystem.
+- [`docs/geekmagic-smalltv-ultra/`](docs/geekmagic-smalltv-ultra/): an ESP8266 weather
+  clock driven entirely by its own HTTP API, with no vendor app.
+- [`docs/pc-wake-by-ble-gamepad/`](docs/pc-wake-by-ble-gamepad/): waking a powered-off PC
+  from a **Bluetooth gamepad**: no wake dongle, no custom firmware, by reusing a BLE proxy
+  you already own. Not a device revival, but the same "re-use what you have" idea.
 
 | Device | Type | Chip / SoC | Protocol | Status |
 |--------|------|-----------|----------|--------|
 | [**Time2 MIP12**](docs/time2-mip12/) | IP camera | HeKai/HK (proprietary P2P) | UDP `:2627` discovery + UDP `:5000` video | ✅ **Fully solved**: video, config channel and **WiFi provisioning** all reverse-engineered; running cable-free |
 | [**Anyka AK3918 PTZ**](docs/anyka-ak3918/) | IP camera (white "V380 clone") | Anyka AK3918 + SSV6006C | RTSP (via SD-card hack) + CGI | ✅ Unlocked, hardened, HA integrated |
+| [**Tesco Hudl 2**](docs/hudl2/) | Android tablet (orphaned) | Intel Atom Bay Trail (x86_64) | ADB + `run-as` (Dirty COW) | ✅ Rooted **without a bootloader unlock**; SELinux/capability ceiling documented |
+| [**KAWA MINI 3 Pro**](docs/kawa-mini-3-pro/) | Dashcam | SigmaStar (BusyBox Linux) | RTSP + telnet + thttpd HTTP | ✅ RTSP, root shell and full-filesystem HTTP documented |
+| [**GeekMagic SmallTV-Ultra**](docs/geekmagic-smalltv-ultra/) | Weather clock | ESP8266 | HTTP `/set` + `/wifisave` | ✅ Provisioned and driven locally, no vendor app |
 
 > 🔎 **Searching for your camera?** These devices are sold under many names:
 > **Time2 MIP12**: apps *Plug2View* / *P2PcamViewer* (Android `x.p2p.cam`), HeKai/HK P2P.
@@ -67,16 +80,40 @@ Start with the docs for the device you own:
 > **TECKIN TC100** and other white-labels. If yours runs one of those apps or SoCs, the
 > docs here apply to it.
 
+> 🔎 **Own a Hudl 2?** The technique (Dirty COW over the setuid `run-as` binary) is not
+> camera-specific and the **SELinux/capability analysis applies to any Android 5.x device
+> whose kernel is in the Dirty COW range (2.6.22 to 4.8.3)**; see [`docs/hudl2/`](docs/hudl2/).
+
+> 🔎 **Own a SigmaStar dashcam?** The RTSP path `/liveRTSP/av4` and the `libmi_*` SDK
+> library names are common across SigmaStar IPC/dashcam firmware, so much of
+> [`docs/kawa-mini-3-pro/`](docs/kawa-mini-3-pro/) applies to sibling devices (DDPAI and
+> others).
+
 > ℹ️ More devices will land here over time. The layout is generic (`docs/<device>/` +
 > a tool folder), so Android boxes, watches and similar toys can be added without any
 > restructuring. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## Why these two
+## Also here: wake a PC from a Bluetooth gamepad
 
-Both are the same *class* of device: a cheap SoC, a cloud-only app, and a proprietary or
-undocumented local interface. They sit at opposite ends of the difficulty spectrum:
+Not every page here is a device teardown. [`docs/pc-wake-by-ble-gamepad/`](docs/pc-wake-by-ble-gamepad/)
+applies the same idea to a *capability* rather than a device: **most Bluetooth gamepads
+cannot wake a PC**, and the usual fix is to buy or build a dedicated USB wake dongle. This
+write-up shows the route that needs **no new hardware**: a BLE proxy on a USB port that
+stays powered while the PC is off does the listening, and Home Assistant turns the resulting
+advertisement into a Wake-on-LAN packet.
+
+It is here because it shares the repo's premise: **the hardware you already own is almost
+always capable enough**, and the only thing missing is documentation.
+
+---
+
+## Why these five
+
+All five are the same *class* of device: a cheap SoC, a cloud-only (or dead) app, and a
+proprietary or undocumented local interface. They span the difficulty range this repo is
+meant to cover:
 
 - The **Anyka** has a **known exploit path** (the VGerris `Factory` SD-card trick) that
   replaces the stock app with a community build (`libre_anyka_app`). You get plain RTSP.
@@ -84,9 +121,19 @@ undocumented local interface. They sit at opposite ends of the difficulty spectr
 - The **Time2 MIP12** has **no public exploit and no replacement firmware**. The only
   route is to reverse the vendor's P2P protocol itself. That's what `docs/time2-mip12/`
   documents.
+- The **Hudl 2** has a **hardware-locked bootloader** and no recovery, so the *usual*
+  route (unlock → custom recovery → root) is closed. The write-up shows the route that
+  *does* work: a public kernel bug pointed at a setuid binary, and, honestly, exactly
+  where it stops.
+- The **KAWA dashcam** has **no exploit and no docs**, but it leaks everything by
+  accident: RTSP, a root shell and its whole filesystem, all unauthenticated. The work is
+  cataloguing (and warning about) what is already exposed.
+- The **GeekMagic clock** is **closed and cloud-bound**, but documents its own HTTP API in
+  the JavaScript it serves. The work is reading what the device already tells you.
 
 That spread (*"there's an exploit and you just harden it"* vs *"there's nothing and you
-reverse it from scratch"*) is the range this repo covers, whatever the device.
+reverse it from scratch"* vs *"the door is welded shut, here's the window"* vs *"it's wide
+open, here's the map"*) is the range this repo covers, whatever the device.
 
 ---
 
@@ -98,12 +145,20 @@ docs/
   REFERENCES.md          All sources, incl. dead vendor pages + community projects
   time2-mip12/           HeKai/HK protocol notes, WiFi provisioning, HA integration
   anyka-ak3918/          SD-card hack, CGI patching, hardening, HA integration
+  hudl2/                 run-as + Dirty COW rooting, SELinux/capability ceiling
+  kawa-mini-3-pro/       SigmaStar dashcam: RTSP, root shell, HTTP filesystem
+  geekmagic-smalltv-ultra/  ESP8266 clock: HTTP API, provisioning, HA integration
+  pc-wake-by-ble-gamepad/  Wake a PC from a BLE gamepad using a proxy you already own
 time2-mip12/
   p2pcam/                Python HeKai/HK client (vendored, MIT)
   tools/                 discovery / handshake / config-command / WiFi-setup helpers
 anyka-ak3918/
   cgi-bin/               Patched + hardened web UI scripts
   ha/                    Home Assistant integration (command_line, rest_command)
+hudl2/
+  exploit/               Original payload, SELinux probe, inline-syscall optimizer, re-root
+pc-wake-by-ble-gamepad/
+  tools/                 BLE advert watcher, Bermuda tracker add, IRK verifier, HA package
 ```
 
 Each tool and script has a header comment explaining **what it does, what it expects and
@@ -135,7 +190,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full guide. The short version:
 **corrections need evidence** (a capture, a disassembly, or reproducible steps), and you
 must never commit credentials or device identifiers.
 
-Two worked examples of *how* the protocol facts here were established, both worth copying
+Worked examples of *how* the protocol facts here were established, both worth copying
 for a new device:
 
 1. **The WiFi command was found by instrumenting the working client, not by reading the

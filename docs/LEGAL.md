@@ -87,7 +87,7 @@ documentation:
 - We follow **coordinated disclosure**: see [`../SECURITY.md`](../SECURITY.md).
 - We do **not** publish a working exploit for a device credential/authentication bypass
   where the vendor is reachable and a fix is plausible.
-- Device families that are **end-of-life and unsupported** (both devices here are
+- Device families that are **end-of-life and unsupported** (the devices here are
   discontinued) are documented openly, because coordinated disclosure is moot and owners
   need the information to protect themselves.
 
