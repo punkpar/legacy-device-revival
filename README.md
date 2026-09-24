@@ -1,4 +1,4 @@
-# Device Sovereignty
+# Legacy Device Revival
 
 **Orphaned device reverse engineering** — protocols, tools and working integrations for
 **cheap and end-of-life devices that ship with no
@@ -6,10 +6,9 @@ documentation and no local API** — only a closed cloud app and, often, a disco
 server. IP cameras, Android TV boxes, old smartwatches, e-readers, IoT gadgets: same
 problem, different silicon.
 
-The goal of this repo is simple: **document the protocols and interfaces properly so you
-don't have to start from zero.** Every device here was bought cheap (or saved from a
-skipped bin), and every one of them is now running fully locally — no cloud dependency and
-no vendor app.
+The point is to **document the protocols and interfaces properly, so you don't have to
+start from zero.** Every device here was bought cheap (or saved from a skipped bin), and
+every one of them is now running fully locally — no cloud dependency and no vendor app.
 
 Everything here is the result of packet capture, static analysis of Android/iOS SDKs and
 firmware, and a lot of trial and error. Where a conclusion is *proven* it's stated as
@@ -87,8 +86,7 @@ undocumented local interface — but they sit at opposite ends of the difficulty
   documents.
 
 That spread — *"there's an exploit and you just harden it"* vs *"there's nothing and you
-reverse it from scratch"* — is exactly the range this repo wants to cover, whatever the
-device.
+reverse it from scratch"* — is the range this repo covers, whatever the device.
 
 ---
 

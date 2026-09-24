@@ -43,7 +43,7 @@ only original implementations of it.** It never redistributes the vendor's code.
 | *Davidson & Associates v. Jung* (Blizzard/BnetD), 422 F.3d 630 (8th Cir. 2005) | ⚠️ The cautionary tale: a **mass-market EULA that banned reverse engineering was enforced**, and the DMCA interoperability exception did **not** save the defendants because their use was not authorised. Lesson: **be aware of any EULA/TOS you agreed to.** |
 | *DVD CCA v. Bunner*, 31 Cal.4th 864 (Cal. 2003) | Trade-secret claim over reverse-engineered facts; a concurrence rejected the idea that a consumer-form EULA redefines "improper means". |
 
-The through-line: **interoperability on hardware you legitimately own, expressed as
+The pattern: **interoperability on hardware you legitimately own, expressed as
 functional facts, implemented in your own code, is the protected zone.**
 
 ---
@@ -115,5 +115,4 @@ Publishing the interface is what lets an owner keep using hardware they paid for
 keeps otherwise-orphaned devices out of landfill. It also turns them into *donors*: an old
 camera becomes an RTSP source, an old Android box becomes a kiosk or a voice satellite, an
 old watch becomes a sensor node. **Re-use is the best recycling** — it needs no new
-manufacturing, no shipping, and avoids paying a device's embodied carbon twice. That is the
-point of this repo.
+manufacturing, no shipping, and avoids paying a device's embodied carbon twice.

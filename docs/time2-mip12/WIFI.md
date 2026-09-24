@@ -30,9 +30,9 @@ sendto(71, "\0\0p\n2I\35\243\0d\0\0\0d7:MainCmd3:7006:isopen1:15:MacIP…", 167,
        {sin_port=htons(2627), sin_addr=inet_addr("255.255.255.255")})
 ```
 
-**Destination is `255.255.255.255:2627`.** The bencode body was essentially right
-for weeks — it was simply being aimed at the camera's video socket (`:5000`, where
-the handshake lives) instead of the discovery broadcast port.
+**Destination is `255.255.255.255:2627`.** The bencode body was right for weeks — it
+was simply being aimed at the camera's video socket (`:5000`, where the handshake
+lives) instead of the discovery broadcast port.
 
 It makes sense in hindsight: `SetLanWifi` is a **provisioning** command. The camera
 may not even have a working session yet, so the command rides the same broadcast
