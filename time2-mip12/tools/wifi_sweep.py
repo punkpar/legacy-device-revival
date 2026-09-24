@@ -23,7 +23,7 @@ This tool:
   2. Sends one candidate envelope + the real WiFi body.
   3. Watches for (a) a non-video reply, or (b) the camera rebooting.
 
-⚠️ The camera is SINGLE-CLIENT — `docker stop time2-bridge` before running.
+⚠️ The camera is SINGLE-CLIENT: `docker stop time2-bridge` before running.
 
 ⚠️ SAFETY: the WiFi body points the camera at YOUR SSID.  Once it succeeds the
 camera **reboots and leaves the cable**.  Sweep candidates are body-only probes
@@ -72,7 +72,7 @@ class Camera:
         self.seq = 0
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # 🔴 local_port=0 — never bind :5000, it collides with the camera session.
+        # 🔴 local_port=0, never bind :5000, it collides with the camera session.
         self.sock.bind(("", 0))
         self.streaming = False
 
@@ -247,7 +247,7 @@ def main() -> int:
 
     cam = Camera(ip, hkid)
     if not cam.connect(timeout=args.timeout):
-        print("❌ handshake failed — is time2-bridge stopped? is the camera awake?")
+        print("❌ handshake failed: is time2-bridge stopped? is the camera awake?")
         cam.close()
         return 1
     print("✅ session established\n")
@@ -268,7 +268,7 @@ def main() -> int:
             for sz, b4, head in nonvid[:6]:
                 print(f"        len={sz} b4={b4:#04x} {head.hex(' ')}")
         else:
-            print("     (video only — no visible config ack)")
+            print("     (video only, no visible config ack)")
 
     cam.close()
     print("\n═══ sweep complete ═══")

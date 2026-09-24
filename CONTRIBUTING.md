@@ -11,11 +11,11 @@ make the record more accurate and more useful are very welcome.
 This is a reverse-engineering repo, so **"I think it works like X" is not enough.** Any
 correction to a protocol claim must come with one of:
 
-- a **packet capture** (redacted — see below), or
+- a **packet capture** (redacted; see below), or
 - a **disassembly** / decompilation with the address or offset, or
 - **reproducible steps** anyone can follow on the same device/firmware.
 
-If you found something by trial and error, that's fine — show the *reproducible steps* and
+If you found something by trial and error, that's fine: show the *reproducible steps* and
 say which part is inference. Mark clearly what is **proven** vs **hypothesised**. We'd rather
 have "unknown, here's what I tried" than a confident guess.
 
@@ -31,7 +31,7 @@ Before you open a PR, make sure it contains **none of the following**:
 
 Use obviously-fake placeholders (`MyNetwork`, `hunter2`, `aa:bb:cc:dd:ee:ff`,
 `CAMID0000000`-style example IDs). Secret files (`.wificreds`, `.env`, `secrets.yaml`,
-`*.pcap`) are gitignored — keep them that way.
+`*.pcap`) are gitignored; keep them that way.
 
 > If a secret *is* committed, treat it as an incident: rotate it, and tell us via
 > [`SECURITY.md`](SECURITY.md) so we can purge history.
@@ -46,7 +46,7 @@ Use obviously-fake placeholders (`MyNetwork`, `hunter2`, `aa:bb:cc:dd:ee:ff`,
 | **New device write-ups** | A `docs/<device>/` folder following the existing structure. |
 | **Home Assistant integrations** | Working YAML, with the HA version you tested on. |
 | **Tools** | Original code, a header comment explaining *what/why*, and a `--dry-run` default where anything is transmitted. |
-| **Docs fixes** | Typos, dead links, clarifications — always welcome. |
+| **Docs fixes** | Typos, dead links, clarifications: always welcome. |
 
 ---
 
@@ -56,7 +56,7 @@ Use obviously-fake placeholders (`MyNetwork`, `hunter2`, `aa:bb:cc:dd:ee:ff`,
   the open questions. Every non-obvious byte should be explained.
 - **Tools live beside the device** (`time2-mip12/tools/`, `anyka-ak3918/`), one file per
   purpose, with a docstring header.
-- **Prefer Python stdlib** for tools — no heavy dependencies, so they run anywhere.
+- **Prefer Python stdlib** for tools: no heavy dependencies, so they run anywhere.
 - **Explicit beats clever.** Name constants after what they *are* (e.g. `SETWIFI_HEADER`,
   `XOR_KEY = 0x3C`) and comment the magic.
 - **State the licence.** New original code is contributed under this repo's MIT licence
@@ -81,7 +81,7 @@ anything you obtained under an NDA or a "no reverse engineering" agreement. Read
 3. Describe **what you changed and why**, and include your evidence.
 4. Small, focused PRs get reviewed fastest.
 
-There is no CLA — the MIT licence covers inbound contributions (GitHub's default
+There is no CLA: the MIT licence covers inbound contributions (GitHub's default
 "inbound = outbound" under its Terms of Service).
 
 ---

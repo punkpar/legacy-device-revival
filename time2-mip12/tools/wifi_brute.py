@@ -6,7 +6,7 @@ envelope: for each candidate `inner_cmd` we send the WiFi body and watch for
 either (a) a non-video reply, or (b) the camera stopping its video stream
 (reboot indicator).
 
-⚠️ single-client — stop time2-bridge first.  Placeholder SSID only.
+⚠️ single-client: stop time2-bridge first. Placeholder SSID only.
 """
 import select
 import socket
@@ -82,7 +82,7 @@ def main() -> int:
         print("❌ no session")
         return 1
     send(_build_session_start(_DEFAULT_SID))
-    print("✅ session up — sweeping inner_cmd 0x00..0xff")
+    print("✅ session up: sweeping inner_cmd 0x00..0xff")
 
     hits = []
     for cmd in range(0x00, 0x100):

@@ -14,7 +14,7 @@ A Python implementation of the HeKai/HK ("P2P") LAN protocol, vendored with a sm
 protocol patch for the Time2 MIP12.
 
 - **Upstream**: `indykoning/PyPI_p2pcam`
-- **Licence**: **MIT** — Copyright (c) 2019 Indy Koning
+- **Licence**: **MIT** (Copyright (c) 2019 Indy Koning)
 - **Patch**: commit adding packet-length handling for the Time2 MIP12, plus a fork PR
   (`devmlb` #3). The `local_port=0` fix (see `docs/time2-mip12/PROTOCOL.md`) is applied
   on top.
@@ -35,7 +35,7 @@ quoted, it is for interoperability research only.
 | `libcaptetown1.so`, `libchinalink.so`, `libsystem.so` | HeKai SDK vendor | ❌ not included |
 | `hkipc.h`, `HKCameraControl.h` (SDK headers) | HeKai SDK vendor | ❌ not included |
 | Anyka stock firmware / `anyka_ipc` binaries | Anyka | ❌ not included |
-| VGerris `Anyka_ak3918_hacking_journey` SD-card payload | VGerris (community) | ❌ not included — see upstream |
+| VGerris `Anyka_ak3918_hacking_journey` SD-card payload | VGerris (community) | ❌ not included (see upstream) |
 
 The Anyka SD-card exploit itself is **community work by VGerris**
 (`github.com/VGerris/Anyka_ak3918_hacking_journey`). This repo documents *how to use it

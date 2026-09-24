@@ -1,4 +1,4 @@
-# Time2 MIP12 — setting WiFi over HeKai/HK
+# Time2 MIP12: setting WiFi over HeKai/HK
 
 > **Status: ✅ SOLVED.** The camera is now running **wirelessly**, configured entirely
 > locally. This page documents the exact command, the frame layout, and the two
@@ -9,7 +9,7 @@ The camera's only configuration interface is the HeKai/HK protocol
 (`SetLanWifi`).
 
 This was solved by capturing the **vendor app itself** ([EMULATOR.md](EMULATOR.md)
-has the capture recipe — the app is `armeabi`-only, so it needs an emulator or an
+has the capture recipe: the app is `armeabi`-only, so it needs an emulator or an
 old 32-bit ARM device).
 
 ---
@@ -20,7 +20,7 @@ Everything in this project's early notes about "the config channel" was a
 reasonable guess that turned out to be **wrong** in two ways. Both are corrected
 here.
 
-### 🔴 1. It is a **broadcast to `:2627`** — not a unicast to `:5000`
+### 🔴 1. It is a **broadcast to `:2627`**, not a unicast to `:5000`
 
 The single decisive line from the capture:
 
@@ -30,7 +30,7 @@ sendto(71, "\0\0p\n2I\35\243\0d\0\0\0d7:MainCmd3:7006:isopen1:15:MacIP…", 167,
        {sin_port=htons(2627), sin_addr=inet_addr("255.255.255.255")})
 ```
 
-**Destination is `255.255.255.255:2627`.** The bencode body was right for weeks — it
+**Destination is `255.255.255.255:2627`.** The bencode body was right for weeks; it
 was simply being aimed at the camera's video socket (`:5000`, where the handshake
 lives) instead of the discovery broadcast port.
 
@@ -38,15 +38,15 @@ It makes sense in hindsight: `SetLanWifi` is a **provisioning** command. The cam
 may not even have a working session yet, so the command rides the same broadcast
 channel as discovery.
 
-### 🔴 2. The body is **raw bencode** — no `0xE9` XOR
+### 🔴 2. The body is **raw bencode**, no `0xE9` XOR
 
 Everything else in the protocol XORs its dictionary bodies with `0xE9`. The
 `SetLanWifi` body does **not**. Sibling commands XOR; this one is plain ASCII.
 
 ### And a third, smaller one
 
-Earlier notes described a fixed envelope — `inner_cmd=0x32 / flag1=0x8B /
-flag2=0xC5 / extra=51 01 00 00` — with the command id buried in the body. The real
+Earlier notes described a fixed envelope (`inner_cmd=0x32 / flag1=0x8B /
+flag2=0xC5 / extra=51 01 00 00`) with the command id buried in the body. The real
 frame is simpler: a **13-byte header whose byte[9] is the command id**, then the
 bencode body follows directly.
 
@@ -54,7 +54,7 @@ bencode body follows directly.
 
 ## 2. The exact frame
 
-167 bytes total. **Deterministic** — byte-identical across runs, so there is **no
+167 bytes total. **Deterministic**: byte-identical across runs, so there is **no
 nonce, session id or timestamp** to reproduce.
 
 ```
@@ -86,7 +86,7 @@ d7:MainCmd3:7006:isopen1:15:MacIP17:aa:bb:cc:dd:ee:ff
 |-----|------|------------|-------|
 | `MainCmd` | string | `700` | SetLanWifi |
 | `isopen` | string | `1` | **a string** `"1"`, not an integer |
-| `MacIP` | string | the camera's **wired** MAC | the **wired/Ethernet** MAC — see below |
+| `MacIP` | string | the camera's **wired** MAC | the **wired/Ethernet** MAC: see below |
 | `encrytype` | string | `auto` | |
 | `wifisid` | string | the SSID | |
 | `safetype` | string | `auto` | |
@@ -96,7 +96,7 @@ d7:MainCmd3:7006:isopen1:15:MacIP17:aa:bb:cc:dd:ee:ff
 ### 🔴 `MacIP` is the **wired** MAC
 
 This is counter-intuitive and the earlier notes got it backwards. `MacIP` is the
-**Ethernet** MAC — the one you get from `arp -a` while the camera is still cabled
+**Ethernet** MAC: the one you get from `arp -a` while the camera is still cabled
 (and the one that identifies the device on the LAN). It is *not* the WiFi MAC.
 
 You can read it before you ever configure WiFi:
@@ -105,9 +105,9 @@ You can read it before you ever configure WiFi:
 arp -a | grep <camera-ip>      # or: ip neigh | grep <camera-ip>
 ```
 
-### The password encoding — corrected
+### The password encoding, corrected
 
-The password is XORed with **`0x3C` over every byte** — the whole string, not "from
+The password is XORed with **`0x3C` over every byte** (the whole string), not "from
 index 2" as one earlier note claimed. (The "from index 2" theory came from reading a
 *different* helper in the disassembly; the *capture* is unambiguous.)
 
@@ -141,8 +141,8 @@ The full preamble the app uses before the write:
 
 2. 13-byte **handshake pings** to the camera's `:5000`:
    `00 00 d0 00 82 0b 70 09 00 d1 07 00 00`
-   — the camera ACKs each with:
-   `00 00 d0 00 92 0b 40 09 00 d1 07 00 00`
+   (the camera ACKs each with:
+   `00 00 d0 00 92 0b 40 09 00 d1 07 00 00`)
 
 3. The **`SetLanWifi` broadcast** (the 167-byte frame above).
 
@@ -162,7 +162,7 @@ the cable is removed.
 # while cabled
 ip neigh | grep <camera-wired-ip>
 
-# after the write + unplug — the WiFi MAC appears on a (possibly new) IP
+# after the write + unplug, the WiFi MAC appears on a (possibly new) IP
 arp -a | grep <camera-oui>
 ```
 
@@ -174,11 +174,11 @@ Two read commands exist on the same channel:
 
 | `MainCmd` | Meaning |
 |-----------|---------|
-| `703` | `DoLanGetWifiSid` — scan neighbouring SSIDs |
+| `703` | `DoLanGetWifiSid`: scan neighbouring SSIDs |
 | `204` | read device / video + network info |
 
 These are sent the **dict-style** way (raw bencode, with the first 2 bytes of the
-*bencode* plain and the rest XORed with `0xE9`) — i.e. they are **not** laid out
+*bencode* plain and the rest XORed with `0xE9`), i.e. they are **not** laid out
 like the `700` write above. You generally don't need them; the write works without
 them.
 
@@ -195,7 +195,7 @@ access point. Two quirks catch people out:
 - The camera runs a **DHCP server** on a private range; give yourself a client
   address in that range.
 
-Once joined, the full HeKai protocol works (pings, `204`, `700`) — a handy recovery
+Once joined, the full HeKai protocol works (pings, `204`, `700`), a handy recovery
 path.
 
 ---
@@ -208,10 +208,10 @@ purely a matter of getting a capture:
 
 | Stage | Result |
 |-------|--------|
-| Static RE of `libcaptetown1.so` | found `MainCmd=700` and the key names — **correct** |
-| Live testing on `:5000` | nothing happened — **wrong socket** |
+| Static RE of `libcaptetown1.so` | found `MainCmd=700` and the key names: **correct** |
+| Live testing on `:5000` | nothing happened: **wrong socket** |
 | Emulated the native encode path | recovered the body, still wrong framing |
-| **Captured the vendor app** | revealed **broadcast `:2627`** + `MacIP`-is-wired — **done** |
+| **Captured the vendor app** | revealed **broadcast `:2627`** + `MacIP`-is-wired: **done** |
 
 The lesson, if there is one: the static work found the *what*; only a capture found
 the *where*.

@@ -7,7 +7,7 @@ wiring **PTZ, IR and motion** into HA via the keyed CGI wrapper.
 
 ## 1. Camera
 
-Use the **Generic Camera** integration (or go2rtc — both work for plain RTSP):
+Use the **Generic Camera** integration (or go2rtc, both work for plain RTSP):
 
 | Field | Value |
 |-------|-------|
@@ -31,7 +31,7 @@ rest_command:
 
 Then a script or button can call `rest_command.anyka_ptz` with `{"cmd": "left"}`.
 
-If you must use the query param instead, that also works (`?cmd=left&key=...`) — but the
+If you must use the query param instead, that also works (`?cmd=left&key=...`), but the
 header is preferable.
 
 ## 3. Switches (real state, not optimistic)

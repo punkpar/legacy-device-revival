@@ -1,4 +1,4 @@
-# Anyka PTZ camera — Home Assistant REST commands.
+# Anyka PTZ camera: Home Assistant REST commands.
 #
 # Drop this under `rest_command:` in your configuration (or add the keys to an
 # existing `rest_command.yaml` included via `!include`).

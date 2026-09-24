@@ -1,4 +1,4 @@
-# Anyka PTZ camera — Home Assistant command_line switches.
+# Anyka PTZ camera: Home Assistant command_line switches.
 #
 # Drop the list under `command_line:` in your configuration (or into a file
 # included via `!include command_line.yaml`).

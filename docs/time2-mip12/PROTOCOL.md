@@ -1,4 +1,4 @@
-# Time2 MIP12 — HeKai/HK P2P protocol
+# Time2 MIP12: HeKai/HK P2P protocol
 
 A reverse-engineered reference for the **Time2 MIP12** (and, by extension, other cameras
 in the HeKai/HK "captetown" family) that expose **no RTSP, no ONVIF, no HTTP and no open
@@ -14,7 +14,7 @@ TCP ports**. The only local interface is a proprietary UDP protocol.
 - [2. The vendor app](#2-the-vendor-app)
 - [3. Discovery (`:2627`)](#3-discovery-2627)
 - [4. Video session (`:5000`)](#4-video-session-5000)
-- [5. The config channel](#5-the-config-channel) — **the interesting part**
+- [5. The config channel](#5-the-config-channel): **the interesting part**
 - [6. WiFi setup](WIFI.md)
 - [7. Home Assistant integration](HOME-ASSISTANT.md)
 
@@ -24,7 +24,7 @@ TCP ports**. The only local interface is a proprietary UDP protocol.
 
 The MIP12 is a 2016-era P2P camera. As observed on the wire:
 
-| Property | Value (example — your camera will differ) |
+| Property | Value (example; your camera will differ) |
 |----------|-------------------------------------------|
 | Discovery port | UDP `2627` |
 | Video port | UDP `5000` |
@@ -32,12 +32,12 @@ The MIP12 is a 2016-era P2P camera. As observed on the wire:
 | Device ID | a short alphanumeric string, e.g. `<DEVICE-ID>` |
 | HKID | a 4-digit numeric id, e.g. `5000` |
 | Camera MAC | vendor OUI **Deutschmann Automation** (`00:14:11`) |
-| Open TCP ports | **telnet (23) only** — no web, no RTSP |
+| Open TCP ports | **telnet (23) only**: no web, no RTSP |
 | Native lib | `libcaptetown1.so` (Android, `armeabi`) |
 
 **There is no RTSP.** This is proven by binary audit: zero RTSP/ONVIF protocol strings
 across the camera's binaries. Any guide claiming you can enable RTSP by flipping a config
-flag is wrong — the server simply isn't in the firmware.
+flag is wrong. The server simply isn't in the firmware.
 
 ---
 
@@ -54,16 +54,16 @@ The official **phone** guide names it directly:
 | Version studied | 8.19.05.22 (built 2019-05-22) |
 | Size | ~6.1 MB |
 | Native libs | `lib/armeabi/libcaptetown1.so`, `libchinalink.so`, `libsystem.so`, `libSCCodec.so`, `libvoiceRecog.so` |
-| ABI | **`armeabi` (32-bit) only** — will **not** install on arm64-only phones |
+| ABI | **`armeabi` (32-bit) only**: will **not** install on arm64-only phones |
 | minSdk / targetSdk | 7 / 19 |
 
-`libcaptetown1.so` **is** the protocol library — it is the same family as the public SDK
+`libcaptetown1.so` **is** the protocol library. It is the same family as the public SDK
 headers (`hkipc.h`, `HKCameraControl.h`) and is the single most useful artifact for
 understanding the protocol. Its JNI entry points (`Java_x1_Studio_Core_OnlineService_*`)
 map directly onto SDK function names.
 
 > ⚠️ **Separate the protocols.** Time2 sold cameras across *two* protocol generations.
-> The **bundled Windows client** ("Time2 Surveillance Pro") is **PPPP**, not HeKai — it
+> The **bundled Windows client** ("Time2 Surveillance Pro") is **PPPP**, not HeKai. It
 > links `PPPP_API.dll` / `IPCClientNetLib.dll` and contains **zero** HeKai tokens. If you
 > try to talk to a HeKai camera with the PPPP client you will get nothing, forever.
 > Identifying which protocol your camera speaks is step one.
@@ -152,7 +152,7 @@ ICMD1 ACK:     d4:ICMD1:293:lastreq1:<hkid>:SEQ3:<seq>e
 SessionDelete: sidN=<sid>;MainCmd=SessionDelete;coz=;
 ```
 
-### Encoding — 🔴 the critical detail
+### Encoding: 🔴 the critical detail
 
 - **Dictionary-style** bodies: keep the **first 2 bytes** plain ASCII, **XOR the rest with
   `0xE9`**.
@@ -165,7 +165,7 @@ the stream stalls.
 ### 🔴 `local_port=0` is mandatory
 
 A naive client binds its local UDP socket to `:5000` to match the camera. This **collides
-with the camera's own session** — the *first* connection works and every later one stalls
+with the camera's own session**: the *first* connection works and every later one stalls
 forever at the ping stage. **Bind to an ephemeral port instead (`local_port=0`).**
 
 ---
@@ -191,7 +191,7 @@ sendto(71, "\0\0p\n2I\35\243\0d\0\0\0d7:MainCmd3:7006:isopen1:15:MacIP…", 167,
        {sin_port=htons(2627), sin_addr=inet_addr("255.255.255.255")})
 ```
 
-Destination **`255.255.255.255:2627`** — the discovery port. Layout is a simple **13-byte
+Destination **`255.255.255.255:2627`**, the discovery port. Layout is a simple **13-byte
 header** (`00 00 70 0a 32 49 1d a3 00 64 00 00 00`, byte[9] = `0x64` = cmd id `100`) followed
 by the bencode body. See [WIFI.md](WIFI.md) for the full frame.
 
@@ -215,16 +215,16 @@ def ben(d):
 
 | `MainCmd` | Meaning |
 |-----------|---------|
-| `700` | **SetLanWifi** — set WiFi credentials (broadcast write) |
-| `703` | `DoLanGetWifiSid` — scan neighbouring SSIDs |
+| `700` | **SetLanWifi**: set WiFi credentials (broadcast write) |
+| `703` | `DoLanGetWifiSid`: scan neighbouring SSIDs |
 | `204` | read device / WiFi info (`HK_CMD_WIFI_IP_INTO`) |
 
 `700` was confirmed from `libcaptetown1.so` JNI `SetLanWifi` (`@0xb8dd`): the code loads the
 **strings** `"MainCmd"` and `"700"` and calls `DictSetStr`. (`0x2BC` == 700.) Note the value
-is a *string*, not an immediate — a plain `movw`/`.rodata` literal scan will not find it,
+is a *string*, not an immediate: a plain `movw`/`.rodata` literal scan will not find it,
 which is why it was long thought "unverified".
 
-### The `204` read — worked example
+### The `204` read: worked example
 
 Sending `d7:MainCmd3:2042:id4:5000e` (dict-style encode) makes the camera return a
 bencoded dict:
@@ -238,23 +238,23 @@ bencoded dict:
  'event': 'eventInbandDesc', 'MainCmd': '17', 'subResource': 'video.vbVideo.MPEG4'}
 ```
 
-That's the **video parameter** read. The reply is intermittent — the camera only answers
+That's the **video parameter** read. The reply is intermittent: the camera only answers
 when it isn't mid-JPEG-frame, so retry.
 
 ### The `700` (WiFi) dict keys
 
 Recovered from the JNI by walking every `ldr rX, [pc, #imm]` + its following
 `add rX, pc` (the strings are PIC-relative and invisible to naive scanning). The **values
-actually observed on the wire** are in the right-hand column — where they differ from the
+actually observed on the wire** are in the right-hand column. Where they differ from the
 JNI defaults, the capture wins.
 
 | Key | Set as | Notes / observed value |
 |-----|--------|------------------------|
 | `MainCmd` | Str | `"700"` |
-| `isopen` | Str (observed) | `"1"` enable / `"0"` AP-mode — JNI builds it as an Int, the app sends a string |
+| `isopen` | Str (observed) | `"1"` enable / `"0"` AP-mode: JNI builds it as an Int, the app sends a string |
 | `wifisid` | Str | SSID |
-| `wifipassword` | Str | PSK — **XOR `0x3C` over the whole string** |
-| `MacIP` | Str | **the camera's *wired* MAC** — see below |
+| `wifipassword` | Str | PSK: **XOR `0x3C` over the whole string** |
+| `MacIP` | Str | **the camera's *wired* MAC**: see below |
 | `safetype` | Str | `auto` observed (`WPA2PSK` / `WPAPSK` / `WEP` / `none` also seen in the JNI) |
 | `encrytype` | Str | `auto` observed (`AES` / `auto` in the JNI) |
 | `safeoption` | Str | WEP option (empty otherwise) |
@@ -266,7 +266,7 @@ JNI defaults, the capture wins.
 
 🔴 **`MacIP` is the *wired* (Ethernet) MAC, not the WiFi MAC.** The earlier note on this
 page said the opposite, and it was wrong. Confirmed by capture: the value sent matches the
-camera's Ethernet MAC — the one visible via `arp` while the camera is still cabled.
+camera's Ethernet MAC, the one visible via `arp` while the camera is still cabled.
 
 Note the **native** names differ from the app's Java-side names (`mac`, `ip`, `dns`,
 `option`): the app's Java layer passes its own names into the JNI, and the **native layer
@@ -274,7 +274,7 @@ remaps them**. The dict that actually goes on the wire uses the names above.
 
 ### ✅ Resolution
 
-The camera did **not** process `MainCmd=700` on `:5000` — the command is a **broadcast on
+The camera did **not** process `MainCmd=700` on `:5000`: the command is a **broadcast on
 `:2627`**. Once that was corrected the write was accepted and the camera joined WiFi.
 Full details in **[WIFI.md](WIFI.md)**.
 
@@ -288,7 +288,7 @@ Full details in **[WIFI.md](WIFI.md)**.
 |------|---------|
 | `p2pcam/` | Vendored, MIT-licensed HeKai/HK client (discovery, handshake, MJPEG). **Includes the `local_port=0` fix.** |
 | `tools/probe_config.py` | Send an arbitrary bencoded `MainCmd` (dict-style read) and print the reply. |
-| `tools/wifi_setup.py` | **The solved `SetLanWifi` broadcast** — builds and sends the 167-byte frame. |
+| `tools/wifi_setup.py` | **The solved `SetLanWifi` broadcast**: builds and sends the 167-byte frame. |
 | `tools/wifi_sweep.py` | Sweep envelopes / probe `703` SSID scans. |
 | `tools/wifi_brute.py` | Sweep `InnerCmd`/command-id variants when probing. |
 

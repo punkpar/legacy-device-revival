@@ -17,18 +17,18 @@ and serves:
 |----------|---------|
 | `/stream` | continuous MJPEG (`multipart/x-mixed-replace`) |
 | `/frame.jpg` | single JPEG snapshot |
-| `/health` | JSON — `{"ok": bool, "frame_age_s": float}` |
+| `/health` | JSON: `{"ok": bool, "frame_age_s": float}` |
 
 Two non-obvious requirements:
 
-- **`local_port=0`** — the client must bind an ephemeral UDP port, *not* `:5000`
+- **`local_port=0`**: the client must bind an ephemeral UDP port, *not* `:5000`
   ([PROTOCOL.md §4](PROTOCOL.md)).
-- **`network_mode: host`** — UDP broadcast discovery on `:2627` cannot cross a Docker
+- **`network_mode: host`**: UDP broadcast discovery on `:2627` cannot cross a Docker
   bridge network, so the container must share the host's network namespace.
 
 ## 2. go2rtc
 
-Add the bridge as a source. 🔴 **`#video=h264` is mandatory** — MJPEG does not survive
+Add the bridge as a source. 🔴 **`#video=h264` is mandatory**: MJPEG does not survive
 RTSP, and HA's live view needs H.264:
 
 ```yaml
@@ -48,12 +48,12 @@ Then in Home Assistant use the **Generic Camera** integration:
 
 ## 3. Gotchas that cost real time
 
-- **`#video=h264`** — omit it and you get
+- **`#video=h264`**: omit it and you get
   `codecs not matched: video:JPEG => video:H264`.
 - **Docker `COPY` preserves file ownership/permissions.** If your bridge runs as a
   non-root user and your source files are `640 root:root`, the container crash-loops with
   `[Errno 13] Permission denied`. Use `COPY --chown=<user>:<user>`. Do **not** use
-  `--chmod=644` — that also strips the execute bit from any *directory* it copies, breaking
+  `--chmod=644` also strips the execute bit from any *directory* it copies, breaking
   traversal.
 - **The camera is single-client.** Only one session at a time. Stop the bridge before
   running your own probes, or they'll fight over the camera.

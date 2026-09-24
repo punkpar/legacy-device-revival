@@ -1,7 +1,7 @@
-# Anyka AK3918 PTZ camera — "white V380 clone"
+# Anyka AK3918 PTZ camera: "white V380 clone"
 
 Notes and hardened artifacts for a cheap **Anyka AK3918**-based PTZ IP camera (the white
-dome, sold under many names — it looks and behaves like a "V380 clone"). Stock, it is
+dome, sold under many names; it looks and behaves like a "V380 clone"). Stock, it is
 **cloud-only**: no RTSP, no ONVIF, closed app.
 
 This page documents how it was unlocked, what runs afterwards, and how the stock firmware's
@@ -19,12 +19,12 @@ This page documents how it was unlocked, what runs afterwards, and how the stock
 |---|---|
 | SoC | **Anyka AK3918** |
 | Sensor | `gc1084` (`isp_gc1084.conf`) |
-| WiFi | **SSV6006C** (`ssv6x5x.ko`) — station mode |
+| WiFi | **SSV6006C** (`ssv6x5x.ko`), station mode |
 | Stock firmware | cloud-only, Yi IoT stack |
 | Stock AP fallback | SSID `CAM_<serial>` / password `12345678` |
 
 Both the sensor and the WiFi chip are on the community *supported* list, which matters for
-[the hack](#2-the-sd-card-factory-hack) — see the warning there.
+[the hack](#2-the-sd-card-factory-hack). See the warning there.
 
 ## 2. The SD-card `Factory` exploit
 
@@ -36,7 +36,7 @@ The elegant part: **nothing is written to the camera's flash**. Pull the card an
 stock again. `rootfs_modified` stays `0`.
 
 After the hack the camera runs a community userspace app, **`libre_anyka_app`**, which
-provides proper **RTSP** — which the stock firmware never had.
+provides proper **RTSP**, which the stock firmware never had.
 
 > 🔴 **Do NOT flash the upstream prebuilt images blindly.** The community images are built
 > for specific sensor/WiFi pairings. If yours differs (e.g. `gc1084` + `ssv6x5x`), the
@@ -50,7 +50,7 @@ provides proper **RTSP** — which the stock firmware never had.
 | `libre_anyka_app` | the RTSP server (replaces the stock cloud app) |
 | `ptz_daemon` (+ `/tmp/ptz.daemon` FIFO) | pan/tilt motor control |
 | busybox `httpd` | tiny web UI |
-| `app_restarter.sh` | supervisor — restarts the app if it dies |
+| `app_restarter.sh` | supervisor: restarts the app if it dies |
 
 ### Streams
 
@@ -87,7 +87,7 @@ plus IR (`init_ir`, `set_ir_cut 1` = colour/day, `set_ir_cut 0` = night) and mot
 Because the daemon has no auth, the web UI exposes a **keyed CGI wrapper**
 (`cgi-bin/ptz`, see [`cgi-bin/`](../../anyka-ak3918/cgi-bin/)) that:
 - requires a shared key (query param `key=` **or** the `X-Ptz-Key` header),
-- **whitelists** the command — no arbitrary input reaches the shell.
+- **whitelists** the command; no arbitrary input reaches the shell.
 
 🔴 **The shared key must live outside any repo.** On the camera it's a file
 (`/etc/jffs2/ptz.key`); in Home Assistant it's `!secret`. See
@@ -113,7 +113,7 @@ This busybox is minimal:
 ## 6. Warning
 
 - **RTSP is unauthenticated and cannot be password-protected.** `libre_anyka_app` has no
-  auth option. **LAN only — never port-forward.**
+  auth option. **LAN only, never port-forward.**
 - **The microphone is always on** and there is no mute in the app.
 - The stock firmware had a **pre-auth root RCE**; if you did not patch it, anyone on your
   LAN has root. See [HARDENING.md](HARDENING.md).

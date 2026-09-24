@@ -55,7 +55,7 @@ run_telnet=0
 ## 3. Settings are silently wiped by unsubmitted checkboxes
 
 The stock `settings_submit.sh` wrote each parameter only when it appeared in the query
-string. **Unchecked checkboxes are omitted by browsers** — so saving any settings page
+string. **Unchecked checkboxes are omitted by browsers**, so saving any settings page
 reset `run_ftp`/`run_telnet` (the security settings) to empty, i.e. **re-enabled them**.
 
 ### The fix

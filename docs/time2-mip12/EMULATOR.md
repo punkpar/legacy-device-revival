@@ -4,15 +4,15 @@ The Time2 vendor app (`x.p2p.cam`, "Plug&Play") is **`armeabi` (32-bit ARM) only
 will not install on any modern arm64 phone, which is exactly why the WiFi command in
 [WIFI.md](WIFI.md) resisted capture for so long.
 
-This page documents how we ran it anyway — in an **x86_64 Android emulator**, on the
-**real LAN** — and captured its traffic. It's written up because *"the vendor app is
+This page documents how we ran it anyway: in an **x86_64 Android emulator**, on the
+**real LAN**, and captured its traffic. It's written up because *"the vendor app is
 32-bit only"* is a dead end that stops a lot of people, and it doesn't have to be.
 
 The whole thing is doable on a Linux host with KVM.
 
 ---
 
-## TL;DR — the working combination
+## TL;DR: the working combination
 
 | Piece | Choice | Why |
 |-------|--------|-----|
@@ -68,7 +68,7 @@ $ adb shell dumpsys package x.p2p.cam | grep -i primaryCpuAbi
 
 ---
 
-## 2. The emulator crashes at ~30 s — work around it
+## 2. The emulator crashes at ~30 s: work around it
 
 With a bleeding-edge host (e.g. Fedora with Mesa 26.x), the emulator's **bundled
 SwiftShader** (`emulator/lib64/gles_swiftshader/libGLESv2.so`) **segfaults** during
@@ -98,10 +98,10 @@ export XDG_RUNTIME_DIR=/run/user/$(id -u)
 
 ---
 
-## 3. Put the guest on the **real LAN** — `-net-tap`
+## 3. Put the guest on the **real LAN**: `-net-tap`
 
 This is the part people miss. The emulator's default networking is **user-mode NAT**
-(`10.0.2.0/24`). It handles outbound unicast, but it **drops broadcast and multicast** —
+(`10.0.2.0/24`). It handles outbound unicast, but it **drops broadcast and multicast**,
 so the app can *never* discover the camera. From the docs:
 
 > *"each instance of the emulator runs behind a virtual router or firewall service that
@@ -153,11 +153,11 @@ emulator -avd camre -memory 2048 -no-window -no-audio -no-boot-anim -no-snapshot
 
 ---
 
-## 4. Capturing — `strace` beats `tcpdump`
+## 4. Capturing: `strace` beats `tcpdump`
 
 You can `tcpdump -i br0`, but for a **UDP broadcast to a port nobody's listening on**, the
 packet can vanish before it's visible (the kernel may not emit it if no interface has the
-broadcast address in scope — which is exactly the NAT case).
+broadcast address in scope, which is exactly the NAT case).
 
 The reliable method is to trace the app's **syscalls** on the device. `strace` is present on
 the emulator image:
@@ -174,7 +174,7 @@ adb shell pkill strace
 adb shell cat /data/local/tmp/s.trace | grep 2627
 ```
 
-`-s 700` matters — it prints the **whole payload**, not the first 32 bytes:
+`-s 700` matters: it prints the **whole payload**, not the first 32 bytes:
 
 ```
 sendto(71, "\0\0p\n2I\35\243\0d\0\0\0d7:MainCmd3:7006:isopen1:15:MacIP…", 167,
@@ -188,7 +188,7 @@ That one line is the entire answer: **payload, length, destination**.
 
 ## 5. Driving the UI headlessly
 
-No window needed — drive it with `input tap` and read state with `uiautomator`.
+No window needed: drive it with `input tap` and read state with `uiautomator`.
 
 ```bash
 # where is the button?
@@ -237,6 +237,6 @@ sudo nmcli con up "Wired connection 1"
 ## Notes on stealth/ethics
 
 This is interoperability work on **hardware you own**, to avoid depending on a
-discontinued cloud service. The vendor app is used as a **reference client** — its traffic
+discontinued cloud service. The vendor app is used as a **reference client**: its traffic
 is observed, not modified, and **no vendor binaries are redistributed** (see
 [THIRD-PARTY](../../THIRD-PARTY.md)).

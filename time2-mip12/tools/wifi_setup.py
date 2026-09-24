@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Time2 MIP12 — SetLanWifi sender, reconstructed from the vendor app's own frame.
+"""Time2 MIP12: SetLanWifi sender, reconstructed from the vendor app's own frame.
 
 ✅ SOLVED 2026-09-23. The camera now joins WiFi and streams from its new DHCP
 address; the Ethernet cable is gone.
 
 🔴 KEY FACTS (the whole point of this file)
-  * The frame is sent as a BROADCAST to 255.255.255.255:2627 — NOT unicast :5000.
+  * The frame is sent as a BROADCAST to 255.255.255.255:2627, NOT unicast :5000.
     That was the missing piece; the bencode body had been correct for weeks.
-  * Body is RAW bencode (no 0xE9 XOR — that encoder is only used in the
+  * Body is RAW bencode (no 0xE9 XOR; that encoder is only used in the
     dictionary/handshake phase of the video socket).
   * The Wi-Fi password is XOR 0x3C over the WHOLE string.
-  * The frame is deterministic (byte-identical across runs) — no nonce/session.
+  * The frame is deterministic (byte-identical across runs): no nonce/session.
   * `MacIP` is the camera's *wired* (Ethernet) MAC, not the WiFi MAC.
   * Per the vendor guide the camera only reboots onto WiFi AFTER the Ethernet
     cable is removed; it accepts the write silently.
@@ -22,7 +22,7 @@ strace inside an x86_64 Android emulator on the real LAN:
            167, MSG_NOSIGNAL,
            {sin_port=htons(2627), sin_addr=inet_addr("255.255.255.255")})
 
-⚠️ Nothing is sent unless you run it — there is no hidden "apply".
+⚠️ Nothing is sent unless you run it: there is no hidden "apply".
 
 Usage:
     python3 wifi_setup.py --ssid MyNet --password hunter2
@@ -43,7 +43,7 @@ VIDEO_PORT = 5000
 # 13-byte header captured verbatim from the app.
 # Layout: 00 00 | 70 0a | 32 49 1d a3 | 00 64 | 00 00 00
 #   byte[4]    = 0x32   (the constant "inner_cmd" seen across the protocol)
-#   byte[9]    = 0x64   (100 — the command id the app uses for this write)
+#   byte[9]    = 0x64   (100, the command id the app uses for this write)
 SETWIFI_HEADER = bytes.fromhex("0000700a32491da30064000000")
 
 # 13-byte keepalive ping the app sends to the camera's :5000 before the write
@@ -51,7 +51,7 @@ HANDSHAKE_PING = bytes.fromhex("0000d000820b700900d1070000")
 
 
 def encode_password(password: str) -> bytes:
-    """XOR every byte with 0x3C — verified byte-for-byte against the capture.
+    """XOR every byte with 0x3C, verified byte-for-byte against the capture.
 
     Proof: ``'hunter2'`` -> ``54 49 52 48 59 4e 0e``.
     """
@@ -80,7 +80,7 @@ def main() -> int:
     ap.add_argument("--ssid", required=True, help="target WiFi SSID")
     ap.add_argument("--password", required=True, help="target WiFi PSK")
     ap.add_argument("--mac", default="",
-                    help="camera WIRED (Ethernet) MAC — what ARP reports while cabled")
+                    help="camera WIRED (Ethernet) MAC, what ARP reports while cabled")
     ap.add_argument("--camera", default="",
                     help="camera's current IP (for the keepalive ping); optional")
     ap.add_argument("--listen", type=float, default=6.0,
@@ -93,7 +93,7 @@ def main() -> int:
     print(f"frame={frame.hex()}")
 
     if len(frame) != 167:
-        print(f"⚠️  expected 167 bytes, got {len(frame)} — check mac length",
+        print(f"⚠️  expected 167 bytes, got {len(frame)}: check mac length",
               file=sys.stderr)
 
     if args.dry_run:

@@ -55,7 +55,7 @@ class Probe:
         self.ip, self.hkid = ip, hkid
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # 🔴 local_port=0 — avoids the :5000 collision documented in the runbook.
+        # 🔴 local_port=0: avoids the :5000 collision documented in the runbook.
         self.sock.bind(("", 0))
         self.seq = 0
         print(f"local port: {self.sock.getsockname()[1]}")
@@ -122,7 +122,7 @@ def try_get(p: Probe, label: str, body: str, *, icmd: int = 0x32,
 def main():
     p = Probe()
     if not p.handshake():
-        print("\n❌ no session — camera not cooperating")
+        print("\n❌ no session: camera not cooperating")
         return 1
     p.send(_build_session_start())
 
