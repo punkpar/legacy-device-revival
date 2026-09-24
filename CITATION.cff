@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "Orphaned Device Reverse Engineering — HeKai/HK & Anyka AK3918"
+title: "Device Sovereignty — Orphaned Device Reverse Engineering: HeKai/HK & Anyka AK3918"
 message: >-
   If you use these protocol notes or tools in your own work, please cite this
   repository. If you build on a specific finding, cite the repository and the
@@ -10,7 +10,7 @@ authors:
     given-names: "Ben"
     alias: "punkpar"
     website: "https://github.com/punkpar"
-repository-code: "https://github.com/punkpar/orphaned-devices"
+repository-code: "https://github.com/punkpar/device-sovereignty"
 abstract: >-
   Protocol documentation, original tooling and Home Assistant integrations for
   cheap and end-of-life devices with no local API and no vendor support. Covers

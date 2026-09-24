@@ -1,6 +1,7 @@
-# Orphaned Device Reverse Engineering
+# Device Sovereignty
 
-Notes, tools and working integrations for **cheap and end-of-life devices that ship with no
+**Orphaned device reverse engineering** — protocols, tools and working integrations for
+**cheap and end-of-life devices that ship with no
 documentation and no local API** — only a closed cloud app and, often, a discontinued
 server. IP cameras, Android TV boxes, old smartwatches, e-readers, IoT gadgets: same
 problem, different silicon.
@@ -60,6 +61,12 @@ Start with the docs for the device you own:
 |--------|------|-----------|----------|--------|
 | [**Time2 MIP12**](docs/time2-mip12/) | IP camera | HeKai/HK (proprietary P2P) | UDP `:2627` discovery + UDP `:5000` video | ✅ **Fully solved** — video, config channel and **WiFi provisioning** all reverse-engineered; running cable-free |
 | [**Anyka AK3918 PTZ**](docs/anyka-ak3918/) | IP camera (white "V380 clone") | Anyka AK3918 + SSV6006C | RTSP (via SD-card hack) + CGI | ✅ Unlocked, hardened, HA integrated |
+
+> 🔎 **Searching for your camera?** These devices are sold under many names:
+> **Time2 MIP12** — apps *Plug2View* / *P2PcamViewer* (Android `x.p2p.cam`), HeKai/HK P2P.
+> **Anyka AK3918 PTZ** — the white **V380** clone (Yi IoT cloud stack), also sold as
+> **TECKIN TC100** and other white-labels. If yours runs one of those apps or SoCs, the
+> docs here apply to it.
 
 > ℹ️ More devices will land here over time — the layout is generic (`docs/<device>/` +
 > a tool folder), so Android boxes, watches and similar toys can be added without any
