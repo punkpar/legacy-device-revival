@@ -307,6 +307,8 @@ its host.**
 | False wakes | Another device shares the manufacturer ID; trigger on the exact address |
 | Tracker flaps constantly | Presence timeout too short for a brief advert |
 | Pad stopped waking the PC, no error anywhere | A lock/helper got stuck `on`; check whether your "PC is off" sensor can even see sleep (see below) |
+| Lock released early / never released | You branched on state and waited inside the branch; see below |
+| Changing a YAML option had no effect | The key may be wrong and the config check will not say so (see below) |
 | PC display sleeps but the PC never does | `powercfg /requests` has a `SYSTEM:` entry vetoing sleep |
 
 ### ⚠️ A landmine: don't disable the radio to "simulate" a powered-off PC
@@ -364,6 +366,75 @@ The fix is to make any "wait for it to settle" rule **release on either state**
 after a dwell, rather than only on the quiet one. Hold the lock only while the
 machine is genuinely flapping between the two, which is the case the dwell exists
 to catch.
+
+#### ⚠️ Do not pick a branch once and wait inside it
+
+The obvious way to express "release when it settles, whichever way it settles" is
+to branch on the current state and then sleep in each branch. **That design is
+broken**, and it is broken in the worst possible direction.
+
+Each branch is evaluated once, when the rule starts. If the state changes while you
+are asleep inside that branch, the automation never notices: it keeps working
+through the branch it already chose and cannot switch. Measured on a real shutdown:
+
+```
+15:54:29  lock armed. Machine is still UP (a shutdown takes ~23 s to finish)
+          -> "still up" branch is chosen
+15:55:12  machine goes off
+15:55:29  the "still up" branch wakes up, re-reads, finds it is now OFF,
+          concludes it is "flapping", and holds the lock
+15:59:12  lock still held, nearly five minutes later. Nothing in the UI says why.
+```
+
+The shutdown had **not** completed when the rule started, so the machine was
+*always* going to cross over during the dwell. The feature meant to prevent a
+dangerous race became the thing that silently disabled waking, and the common case
+was the broken one.
+
+Write it as a delay and a single fresh read instead:
+
+```yaml
+- delay: "00:00:30"          # let the shutdown actually begin
+- delay: "00:01:00"          # the continuity window
+# then ONE re-read of the sensor. Decide from that single value.
+# There is no branch to get stuck in.
+```
+
+The re-read is what makes it a decision rather than a guess, and because it
+happens once, at the end, a change in the middle cannot be missed.
+
+#### ⚠️ `wait_template` is not a debounce
+
+Worth knowing because the name suggests otherwise. From the Home Assistant docs:
+
+> The template is **re-evaluated whenever an entity ID that it references changes
+> state.**
+
+So it re-evaluates *on change* and returns as soon as the expression is true. A
+template like `{{ is_state(x, 'a') or is_state(x, 'b') }}` is true immediately and
+waits for nothing at all. It cannot express "unchanged for 60 seconds".
+
+| If you want | Use |
+|---|---|
+| "wait until it becomes X" | `wait_template` |
+| "wait until it has been unchanged for N" | `delay` + one re-read, or `for:` on a state trigger |
+| "wait until it has been X continuously for N" | `wait_template` on an `off`/`on` test, then dwell + re-check |
+
+#### ⚠️ A green config check does not mean your option name is real
+
+Worth stating bluntly, because it cost an hour. The obvious fix for a sensor that
+flaps to `unavailable` is to raise its command timeout. In Home Assistant the
+option is **`command_timeout`**, default **15** seconds. Writing `timeout:` instead
+is silently ignored, and `ha core check` **passes anyway**, because the config
+validator does not reject unknown keys inside a package. You get a clean check and
+no behaviour change, which is worse than an error.
+
+Check the real key and default before trusting a validation run:
+
+```bash
+grep -rn "CONF_COMMAND_TIMEOUT\|DEFAULT_TIMEOUT" \
+  /usr/src/homeassistant/homeassistant/components/command_line/
+```
 
 > **Measure at a higher resolution than the system you are measuring.** A
 > 60-second ping sensor will happily convince you that a 23-second shutdown took
