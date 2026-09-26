@@ -306,6 +306,8 @@ its host.**
 | Wakes, but the pad then won't connect | Unrelated to this scheme; see the note below |
 | False wakes | Another device shares the manufacturer ID; trigger on the exact address |
 | Tracker flaps constantly | Presence timeout too short for a brief advert |
+| Pad stopped waking the PC, no error anywhere | A lock/helper got stuck `on`; check whether your "PC is off" sensor can even see sleep (see below) |
+| PC display sleeps but the PC never does | `powercfg /requests` has a `SYSTEM:` entry vetoing sleep |
 
 ### ⚠️ A landmine: don't disable the radio to "simulate" a powered-off PC
 
@@ -330,6 +332,74 @@ pnputil /enable-device "<instance-id>"
 
 If that fails, cycle it, then restart the Bluetooth service (`bthserv`), then reboot.
 **Use a real shutdown to test S5 behaviour**: never a device-disable.
+
+### ⚠️ A ping probe cannot see S3 sleep
+
+You will eventually want the PC to sleep rather than stay powered off, and the
+usual shortcut is to reuse an existing "is the PC up?" ping sensor for the wake
+automation's condition. **Do not, and if you already do, read this.**
+
+On the machine this was built for, the Realtek NIC keeps its PHY powered in S3 so
+that Wake-on-LAN keeps working, and Windows still services ICMP. So during sleep:
+
+- `ping` answers, every time.
+- `ssh` connects and returns a shell.
+- The monitor reports `Active=True` (the TV is still on, just showing no signal).
+
+A sleeping PC is therefore **indistinguishable from a running one** to a ping. If
+you have ever written a "wait until the machine is off, then re-arm something"
+rule against that sensor, it will hang forever. Here it silently wedged a lock
+that was supposed to block wake-during-shutdown, which meant **the pad stopped
+waking the PC at all** and nothing in the UI said why.
+
+Check the truth with the OS rather than the network:
+
+```powershell
+# Did it actually go to sleep? (42 = entering sleep, 107 = resumed)
+Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Kernel-Power';Id=42,107} -MaxEvents 10 |
+  Select-Object TimeCreated,Id | Format-Table -AutoSize
+```
+
+The fix is to make any "wait for it to settle" rule **release on either state**
+after a dwell, rather than only on the quiet one. Hold the lock only while the
+machine is genuinely flapping between the two, which is the case the dwell exists
+to catch.
+
+> **Measure at a higher resolution than the system you are measuring.** A
+> 60-second ping sensor will happily convince you that a 23-second shutdown took
+> three and a half minutes. It did not. Sample the machine directly at 1-2 s while
+> you diagnose, and only then set your automation intervals.
+
+### ⚠️ An orphaned audio stream will stop a PC from ever sleeping
+
+Unrelated to Bluetooth, but it bit us here and it is invisible, so it is worth
+knowing about.
+
+If the PC's display goes off but the machine never sleeps, run this **first**:
+
+```powershell
+powercfg /requests
+```
+
+Anything listed under `SYSTEM:` is an unconditional veto on automatic sleep. A
+streaming server that opens a microphone and then exits without closing it will
+leave a driver-level entry behind **forever**, and the machine will never sleep
+again no matter how the power settings are configured. In our case a
+`Steam Streaming Microphone` entry survived long after the application that
+created it had exited.
+
+The fix is to restart the audio service, which tears down every open stream:
+
+```powershell
+Restart-Service Audiosrv -Force
+powercfg /requests      # the SYSTEM: block should now be empty
+```
+
+If the application that opened the stream installs its own virtual audio
+device, also turn that off in the application's own configuration. A manual
+`Disable-PnpDevice` is not a fix here for two reasons: the stream lives in the
+audio service rather than the device, and the application re-installs the driver
+on every start, silently undoing your change.
 
 ---
 
