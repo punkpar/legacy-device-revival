@@ -1,0 +1,20 @@
+# Disable USB autosuspend for the SIPODEV keyboard dock / trackpad
+#
+# Device: SIPODEV 17EF:60BB (the detachable keyboard dock's trackpad)
+#
+# Without this the device suspends after ~2s of inactivity, which shows up as
+# input that "sometimes works, sometimes does nothing": missed events on resume,
+# and wake-up latency.
+#
+# Install: copy to /etc/udev/rules.d/80-sipodev-no-autosuspend.rules, then
+#          `sudo udevadm control --reload-rules && sudo udevadm trigger`.
+#
+# NOTE: this device is the keyboard dock's TRACKPAD, not the touchscreen.
+# The touchscreen is a separate Wacom HID device on I2C and is not affected by
+# this rule (it has no driver bound at all -- see docs/miixpad-520/TOUCHSCREEN.md).
+#
+# Tested on: Lenovo MIIX 520-12IKB (20M3), Fedora 44, kernel 7.2.9-200.fc44
+
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="17ef", ATTR{idProduct}=="60bb", \
+  ATTR{power/autosuspend_delay_ms}="-1", \
+  ATTR{power/control}="on"

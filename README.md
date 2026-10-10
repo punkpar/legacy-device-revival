@@ -62,6 +62,11 @@ Start with the docs for the device you own:
   RTSP stream, root shell and HTTP filesystem.
 - [`docs/geekmagic-smalltv-ultra/`](docs/geekmagic-smalltv-ultra/): an ESP8266 weather
   clock driven entirely by its own HTTP API, with no vendor app.
+- [`docs/miixpad-520/`](docs/miixpad-520/): a Lenovo detachable whose **fingerprint
+  sensor and on-display touchscreen are both driverless on Linux** — the SPI
+  fingerprint reverse engineering (7 of 9 root causes solved), why the keyboard
+  dock's trackpad is not the touchscreen, and a power-on technique that
+  **bricks the embedded controller**.
 - [`docs/pc-wake-by-ble-gamepad/`](docs/pc-wake-by-ble-gamepad/): waking a powered-off PC
   from a **Bluetooth gamepad**: no wake dongle, no custom firmware, by reusing a BLE proxy
   you already own. Not a device revival, but the same "re-use what you have" idea.
@@ -73,6 +78,7 @@ Start with the docs for the device you own:
 | [**Tesco Hudl 2**](docs/hudl2/) | Android tablet (orphaned) | Intel Atom Bay Trail (x86_64) | ADB + `run-as` (Dirty COW) | ✅ Rooted **without a bootloader unlock**; SELinux/capability ceiling documented |
 | [**KAWA MINI 3 Pro**](docs/kawa-mini-3-pro/) | Dashcam | SigmaStar (BusyBox Linux) | RTSP + telnet + thttpd HTTP | ✅ RTSP, root shell and full-filesystem HTTP documented |
 | [**GeekMagic SmallTV-Ultra**](docs/geekmagic-smalltv-ultra/) | Weather clock | ESP8266 | HTTP `/set` + `/wifisave` | ✅ Provisioned and driven locally, no vendor app |
+| [**Lenovo MIIX 520-12IKB**](docs/miixpad-520/) | Windows tablet | Intel i5-8250U (Kaby Lake) | ACPI (SPI HID / I²C-HID) | ⚠️ **Driverless on Linux**: fingerprint + touchscreen have no kernel support. Documented the SPI bring-up, and a method that **bricks the EC** |
 
 > 🔎 **Searching for your camera?** These devices are sold under many names:
 > **Time2 MIP12**: apps *Plug2View* / *P2PcamViewer* (Android `x.p2p.cam`), HeKai/HK P2P.
