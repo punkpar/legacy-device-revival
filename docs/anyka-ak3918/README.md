@@ -1,8 +1,8 @@
-# Anyka AK3918 PTZ camera: "white V380 clone"
+# Anyka AK3918 PTZ: the white V380 clone
 
-Notes and hardened artifacts for a cheap **Anyka AK3918**-based PTZ IP camera (the white
-dome, sold under many names; it looks and behaves like a "V380 clone"). Stock, it is
-**cloud-only**: no RTSP, no ONVIF, closed app.
+Stock, this camera is cloud-only with no RTSP. An SD-card boot trick swaps in a community app that gives you plain RTSP, and then the real work starts: closing its holes.
+
+Cheap **Anyka AK3918** PTZ dome (sold as V380 clone, TECKIN TC100, and other white-labels). Method: SD-card `Factory` trick → `libre_anyka_app` → harden → Home Assistant.
 
 This page documents how it was unlocked, what runs afterwards, and how the stock firmware's
 **pre-auth root RCE** was closed.

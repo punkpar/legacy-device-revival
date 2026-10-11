@@ -1,10 +1,8 @@
-# GeekMagic SmallTV-Ultra: an open weather clock with a documented HTTP API
+# GeekMagic SmallTV-Ultra: a clock that documents itself
 
-The **GeekMagic SmallTV-Ultra** is a cheap 240×240 desk weather clock built on an
-**ESP8266**. Stock, it is configured entirely through a Chinese phone app and phones home
-to OpenWeather and the GeekMagic cloud. But it also runs a **small HTTP server** whose own
-JavaScript spells out **every endpoint**: so it can be provisioned and driven entirely
-locally, with no app and no cloud account.
+This clock phones home to a Chinese app and cloud, but its own web console's JavaScript spells out every endpoint. Darling, it documented itself. Just read what it already tells you.
+
+Cheap 240×240 ESP8266 desk clock. Method: provision over its open `GIFTV` AP, drive it over plain HTTP (`/set`, `/wifisave`). No app, no account.
 
 **Contents:** [1. Hardware](#1-hardware) · [2. Provisioning without the app](#2-provisioning-without-the-app) ·
 [3. HTTP API](#3-http-api) · [4. Firmware](#4-firmware) · [5. Security](#5-security) ·

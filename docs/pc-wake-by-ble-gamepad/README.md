@@ -1,21 +1,10 @@
-# Wake a PC with a Bluetooth gamepad, no dongle, no custom firmware
+# Wake a PC with a Bluetooth gamepad: no dongle, no custom firmware
 
-> **Status: ✅ proven end-to-end.** A stock Xbox Series pad powers on a fully
-> powered-off (S5) Windows PC in well under a second of logic latency, using
-> **only hardware you already own**: a cheap ESP32 BLE proxy, Home Assistant, and
-> the PC's own Wake-on-LAN.
+Most gamepads can't wake a PC, sweetie. The PC's Bluetooth stack is asleep and nothing is listening when you press the button.
 
-Most Bluetooth gamepads **cannot** wake a sleeping or powered-off PC. You press the
-button, the pad tries to reconnect, and nothing happens: the PC's Bluetooth stack
-is asleep and nothing is listening. The usual fix is to build or buy a dedicated
-**USB wake dongle** (the excellent
-[`kungaa/PC-wake-dongle`](https://github.com/kungaa/PC-wake-dongle) is one). This
-document is the *other* route: **you probably already own every part.**
+The fix is to move the listening *outside* the PC. A tiny ESP32 running ESPHome `bluetooth_proxy` sits on a USB port that stays powered when the PC is off, relays the pad's advertisement over WiFi to Home Assistant, and Home Assistant sends a Wake-on-LAN packet. Proven end-to-end on a stock Xbox Series pad waking a fully powered-off (S5) PC.
 
-The trick is to move the listening **outside the PC**. A tiny ESP32 running
-ESPHome's `bluetooth_proxy` sits on a USB port that stays powered when the PC is
-off, relays the pad's advertisement over WiFi to Home Assistant, and Home Assistant
-sends a Wake-on-LAN packet. Nothing inside the PC needs to be awake.
+> Prefer a purpose-built dongle? [`kungaa/PC-wake-dongle`](https://github.com/kungaa/PC-wake-dongle) is excellent. This guide is the no-new-hardware route.
 
 ```
 [gamepad]  --BLE advertisement-->  [ESP32 BLE proxy]  --WiFi-->  [Home Assistant]
@@ -27,87 +16,37 @@ sends a Wake-on-LAN packet. Nothing inside the PC needs to be awake.
 
 ---
 
-## Why this works at all
+## What you need
 
-Two facts have to hold. Both are testable, and you should test them on your own
-hardware rather than take them on faith:
+Two facts have to hold. Test both on your own hardware:
 
-1. **The gamepad advertises when it has no host.** A pad that is *connected* to a PC
-   is silent: it has no reason to advertise. The moment it loses its host (because
-   the PC is off) and you press the button, it starts advertising while it searches.
-   This is the signal we exploit.
-2. **The USB port stays powered when the PC is off.** This is a **BIOS setting**, not
-   a Windows one, and it is the single point of failure for the whole scheme.
+1. **The pad advertises over BLE when it has no host.** Connected = silent. PC off + button press = advertising while it searches. Xbox Series pads do this; many others don't ([which pads](#which-pads-work-and-which-do-not)).
+2. **The USB port stays powered when the PC is off.** A BIOS setting (ErP / Deep Sleep), not Windows. This is the single point of failure.
 
-> **This only works for gamepads that advertise over Bluetooth LE.** Xbox Series
-> controllers do. Many others do **not**; see
-> [Which pads work](#which-pads-work-and-which-do-not).
+| Need | Notes |
+|------|-------|
+| BLE-advertising gamepad | Xbox Series X\|S is the known-good case |
+| ESP32 with ESPHome `bluetooth_proxy` | Does the listening while the PC is off |
+| USB port live in S5 (or a wall charger) | Check BIOS; fallback is any always-on 5 V supply |
+| Home Assistant + working Wake-on-LAN | Converts the advert into a magic packet |
 
----
-
-## Requirements
-
-| Need | Why |
-|------|-----|
-| A **BLE-advertising** gamepad | Xbox Series (X\|S) pads are the known-good case |
-| An **ESP32** running ESPHome `bluetooth_proxy` | Does the listening while the PC is off |
-| A **USB port that stays powered in S5** | Powers the proxy when the PC is off; **check your BIOS** |
-| **Home Assistant** | Converts the advert into a Wake-on-LAN packet |
-| **Wake-on-LAN working from S5** | The actual wake mechanism |
-
-You do **not** need: a Raspberry Pi Pico, a custom `.uf2`, soldering, or a vendor
-account. If you already run ESPHome and Home Assistant, this is a configuration
-exercise.
+No Pico, no custom firmware, no soldering, no vendor account.
 
 ---
 
-## Step 0: Decide whether your board keeps USB alive in S5
+## Step 0: Confirm USB stays alive in S5
 
-This is the **go/no-go test**, and it is free. Do it before anything else.
-
-### Look up your board's setting
-
-The setting has different names across vendors: it is a **toggle**, and the
-default is usually "USB stays powered":
-
-| Vendor | Where | What to look for |
-|--------|-------|------------------|
-| **ASRock** | Advanced → ACPI Configuration | **Deep Sleep**: `[Disabled]` / `[Enabled in S5]` / `[Enabled in S4 & S5]`. Enabling it **turns USB power OFF** in S5. |
-| **ASRock** (some boards) | Advanced → Onboard Devices Configuration | *"USB Power Delivery in Soft Off State (S5)"*: enabling it **keeps USB powered** |
-| **ASUS** | Advanced → APM Configuration | **ErP Ready**: `[Disabled]` keeps USB powered; `[Enabled (S4+S5)]` kills it |
-| **MSI** | Settings → Advanced → Power Management | **ErP Ready** |
-| **Gigabyte** | Settings → Platform Power | **ErP** / *Power Loading* |
-
-The general rule: **"ErP", "Deep Sleep" and "EuP" are energy regulations that
-require near-zero standby draw; enabling them removes USB power.** Disable them if
-you want a live port.
-
-> 🔴 **Find your exact model's manual.** These names are *not* consistent even
-> within one vendor's product line. A wrong guess here wastes an afternoon. Search
-> `"<your board>" manual "Deep Sleep"` or `"<your board>" "ErP Ready"` and read the
-> ACPI section.
-
-### Verify it empirically: the only test that matters
-
-Never trust the setting name. Measure it:
+This is the go/no-go test, do it first. Look up your board's standby-USB setting (ErP / Deep Sleep / EuP; names vary by vendor so check your exact model's manual), disable the power-saving mode, then verify empirically:
 
 ```bash
-# 1. Shut the PC down fully (S5, "power off", not sleep).
-# 2. From another machine on the same network, wait ~60 s, then ping the proxy:
+# 1. Shut the PC down fully (S5, not sleep). Wait ~60 s.
 ping -c 3 <PROXY_IP>
-
-# 3. If it answers, confirm its API port is open too:
-#    (ESPHome's API is 6053 by default)
 timeout 3 bash -c "echo > /dev/tcp/<PROXY_IP>/6053" && echo "ALIVE" || echo "DEAD"
 ```
 
-- **Proxy answers while the PC is off → proceed.** ✅
-- **Proxy is dead → stop.** Change the BIOS setting (or use a wall charger; see
-  [the wall-charger variant](#variant-a-wall-charger-instead-of-the-pc-usb-port)).
+Proxy answers while the PC is off: proceed. Dead: change the BIOS setting, or power the proxy from a wall charger instead ([variant](#variant-a-wall-charger-instead-of-the-pc-usb-port)).
 
-> **A lit mouse is not proof.** Many boards feed standby 5 V to USB *and* light up
-> peripheral LEDs, so a glowing mouse means nothing either way. Only a network
-> response from the proxy proves the port is live.
+> A lit mouse proves nothing. Only a network response from the proxy counts.
 
 ---
 
@@ -335,212 +274,29 @@ pnputil /enable-device "<instance-id>"
 If that fails, cycle it, then restart the Bluetooth service (`bthserv`), then reboot.
 **Use a real shutdown to test S5 behaviour**: never a device-disable.
 
-### ⚠️ A ping probe cannot see S3 sleep
+### ⚠️ A ping sensor can't see sleep
 
-You will eventually want the PC to sleep rather than stay powered off, and the
-usual shortcut is to reuse an existing "is the PC up?" ping sensor for the wake
-automation's condition. **Do not, and if you already do, read this.**
-
-On the machine this was built for, the Realtek NIC keeps its PHY powered in S3 so
-that Wake-on-LAN keeps working, and Windows still services ICMP. So during sleep:
-
-- `ping` answers, every time.
-- `ssh` connects and returns a shell.
-- The monitor reports `Active=True` (the TV is still on, just showing no signal).
-
-A sleeping PC is therefore **indistinguishable from a running one** to a ping. If
-you have ever written a "wait until the machine is off, then re-arm something"
-rule against that sensor, it will hang forever. Here it silently wedged a lock
-that was supposed to block wake-during-shutdown, which meant **the pad stopped
-waking the PC at all** and nothing in the UI said why.
-
-Check the truth with the OS rather than the network:
+Some NICs keep answering ping in S3 sleep (ours did, Realtek PHY stays up for WOL). A sleeping PC then looks identical to a running one, and any "wait until it's off" rule hangs forever. Check sleep state with the OS, not the network:
 
 ```powershell
-# Did it actually go to sleep? (42 = entering sleep, 107 = resumed)
 Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Kernel-Power';Id=42,107} -MaxEvents 10 |
   Select-Object TimeCreated,Id | Format-Table -AutoSize
 ```
 
-The fix is to make any "wait for it to settle" rule **release on either state**
-after a dwell, rather than only on the quiet one. Hold the lock only while the
-machine is genuinely flapping between the two, which is the case the dwell exists
-to catch.
-
-#### ⚠️ Do not pick a branch once and wait inside it
-
-The obvious way to express "release when it settles, whichever way it settles" is
-to branch on the current state and then sleep in each branch. **That design is
-broken**, and it is broken in the worst possible direction.
-
-Each branch is evaluated once, when the rule starts. If the state changes while you
-are asleep inside that branch, the automation never notices: it keeps working
-through the branch it already chose and cannot switch. Measured on a real shutdown:
-
-```
-15:54:29  lock armed. Machine is still UP (a shutdown takes ~23 s to finish)
-          -> "still up" branch is chosen
-15:55:12  machine goes off
-15:55:29  the "still up" branch wakes up, re-reads, finds it is now OFF,
-          concludes it is "flapping", and holds the lock
-15:59:12  lock still held, nearly five minutes later. Nothing in the UI says why.
-```
-
-The shutdown had **not** completed when the rule started, so the machine was
-*always* going to cross over during the dwell. The feature meant to prevent a
-dangerous race became the thing that silently disabled waking, and the common case
-was the broken one.
-
-Write it as a delay and a single fresh read instead:
-
-```yaml
-- delay: "00:00:30"          # let the shutdown actually begin
-- delay: "00:01:00"          # the continuity window
-# then ONE re-read of the sensor. Decide from that single value.
-# There is no branch to get stuck in.
-```
-
-The re-read is what makes it a decision rather than a guess, and because it
-happens once, at the end, a change in the middle cannot be missed.
-
-#### ⚠️ `wait_template` is not a debounce
-
-Worth knowing because the name suggests otherwise. From the Home Assistant docs:
-
-> The template is **re-evaluated whenever an entity ID that it references changes
-> state.**
-
-So it re-evaluates *on change* and returns as soon as the expression is true. A
-template like `{{ is_state(x, 'a') or is_state(x, 'b') }}` is true immediately and
-waits for nothing at all. It cannot express "unchanged for 60 seconds".
-
-| If you want | Use |
-|---|---|
-| "wait until it becomes X" | `wait_template` |
-| "wait until it has been unchanged for N" | `delay` + one re-read, or `for:` on a state trigger |
-| "wait until it has been X continuously for N" | `wait_template` on an `off`/`on` test, then dwell + re-check |
-
-#### ⚠️ A green config check does not mean your option name is real
-
-Worth stating bluntly, because it cost an hour. The obvious fix for a sensor that
-flaps to `unavailable` is to raise its command timeout. In Home Assistant the
-option is **`command_timeout`**, default **15** seconds. Writing `timeout:` instead
-is silently ignored, and `ha core check` **passes anyway**, because the config
-validator does not reject unknown keys inside a package. You get a clean check and
-no behaviour change, which is worse than an error.
-
-Check the real key and default before trusting a validation run:
-
-```bash
-grep -rn "CONF_COMMAND_TIMEOUT\|DEFAULT_TIMEOUT" \
-  /usr/src/homeassistant/homeassistant/components/command_line/
-```
-
-> **Measure at a higher resolution than the system you are measuring.** A
-> 60-second ping sensor will happily convince you that a 23-second shutdown took
-> three and a half minutes. It did not. Sample the machine directly at 1-2 s while
-> you diagnose, and only then set your automation intervals.
-
-### ⚠️ An orphaned audio stream will stop a PC from ever sleeping
-
-Unrelated to Bluetooth, but it bit us here and it is invisible, so it is worth
-knowing about.
-
-If the PC's display goes off but the machine never sleeps, run this **first**:
-
-```powershell
-powercfg /requests
-```
-
-Anything listed under `SYSTEM:` is an unconditional veto on automatic sleep. A
-streaming server that opens a microphone and then exits without closing it will
-leave a driver-level entry behind **forever**, and the machine will never sleep
-again no matter how the power settings are configured. In our case a
-`Steam Streaming Microphone` entry survived long after the application that
-created it had exited.
-
-The fix is to restart the audio service, which tears down every open stream:
-
-```powershell
-Restart-Service Audiosrv -Force
-powercfg /requests      # the SYSTEM: block should now be empty
-```
-
-If the application that opened the stream installs its own virtual audio
-device, also turn that off in the application's own configuration. A manual
-`Disable-PnpDevice` is not a fix here for two reasons: the stream lives in the
-audio service rather than the device, and the application re-installs the driver
-on every start, silently undoing your change.
+And if the PC never sleeps at all, run `powercfg /requests` first. Anything under `SYSTEM:` vetoes sleep unconditionally. A leaked audio stream (ours was a streaming server's mic left open) holds it forever; `Restart-Service Audiosrv -Force` clears it.
 
 ---
 
-## Variant: a wall charger instead of the PC USB port
+## Variants
 
-If your board cannot keep USB alive in S5, or you would rather not put the proxy on
-the PC at all, **put the proxy on any always-on 5 V supply** near the PC (a phone
-charger, a TV USB port, a powered hub) and skip Step 0 entirely.
+**No live USB port?** Power the proxy from any always-on 5 V supply (phone charger, TV USB, powered hub) and skip Step 0. Only requirement: proxy and pad in range.
 
-The only requirement is that the proxy and the pad are in range of each other. This
-is strictly simpler and removes the single-point-of-failure risk; it just costs one
-spare charger.
+**Rotating address?** You need the pad's Identity Resolving Key plus HA's [Private BLE Device](https://www.home-assistant.io/integrations/private_ble_device/) integration. IRK sources: Windows (`BTHPORT\Parameters\Keys`, needs SYSTEM context), rooted Android (`/data/misc/bluedroid/bt_config.conf`, reverse the bytes), macOS Keychain (Remote IRK). Verify with [`tools/verify-irk.py`](../../pc-wake-by-ble-gamepad/tools/verify-irk.py); it tests both byte orders.
 
 ---
 
-## Rotating addresses: the IRK path
+## Safety
 
-If your pad genuinely rotates its address, a fixed-address tracker will not hold. You
-need the pad's **Identity Resolving Key** and Home Assistant's core
-[Private BLE Device](https://www.home-assistant.io/integrations/private_ble_device/)
-integration, which resolves the rotating addresses back to one logical device.
+LAN-local only: BLE to WiFi to HA to magic packet on your own subnet. A magic packet is unauthenticated by design, so never port-forward HA or the proxy for this. Use a VPN.
 
-You can obtain an IRK from a host the device has paired with:
-
-- **Windows:** `HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Keys\<adapter>\<device>`.
-  This key is ACL'd to **SYSTEM**, so an ordinary (even elevated) read returns an
-  *empty listing* rather than an error. You need SYSTEM context.
-- **Android (rooted):** `/data/misc/bluedroid/bt_config.conf`, first 16 bytes of
-  `LE_KEY_PID`; **little-endian, reverse the bytes**.
-- **macOS:** Keychain Access → *Bluetooth* → find the record → *Show password* →
-  **Remote IRK** (base64).
-
-> 🔴 **Verify the IRK before trusting it.** A BLE RPA is
-> `prand (high 3 bytes) || hash (low 3 bytes)`, and the IRK resolves it via
-> `ah(k, r) = AES-128-ECB(k, 13 zero bytes || prand)[0:3] == hash`. Getting the
-> prand/hash order backwards makes a perfectly good key look broken. See
-> [`pc-wake-by-ble-gamepad/tools/verify-irk.py`](../../pc-wake-by-ble-gamepad/tools/verify-irk.py), which tests **both byte
-> orders** and tells you which one actually works.
-
-⚠️ Note the two most significant bits of `prand` must be `0b01` for an address to be
-a valid RPA at all. If they are not, no IRK can resolve it; you are probably looking
-at a **public** address that merely resembles an RPA.
-
----
-
-## Security notes
-
-- **This does not expose anything to the internet.** Everything is LAN-local: BLE
-  advertisement → WiFi → Home Assistant → a magic packet on your own subnet.
-- **A magic packet is unauthenticated.** Anyone on your LAN can wake the PC. That is
-  inherent to Wake-on-LAN, not to this scheme.
-- **Do not port-forward Home Assistant or the proxy** to make this work from outside.
-  If you want that, use a VPN.
-- **The proxy's ESPHome API** should stay on your LAN. If you enable its fallback
-  hotspot, give it a password.
-
----
-
-## Credits & prior art
-
-The idea of waking a PC from a BLE device is not new; this document exists because the
-*implementation* can reuse hardware most self-hosters already have:
-
-- [`kungaa/PC-wake-dongle`](https://github.com/kungaa/PC-wake-dongle): a Pico W / Pico 2 W
-  USB dongle that does this with custom firmware (TinyUSB HID + BTstack). Its
-  "what works / what doesn't" table is the clearest statement anywhere of the
-  Classic-vs-BLE limitation, and it is what confirmed an unhosted Xbox Series pad
-  advertises.
-- [ESPHome `bluetooth_proxy`](https://esphome.io/components/bluetooth_proxy/)
-- [Bermuda BLE Trilateration](https://github.com/agittins/bermuda)
-- [Home Assistant `private_ble_device`](https://www.home-assistant.io/integrations/private_ble_device/)
-
-See [`../REFERENCES.md`](../REFERENCES.md) for the full source list.
+Prior art: [`kungaa/PC-wake-dongle`](https://github.com/kungaa/PC-wake-dongle), [ESPHome `bluetooth_proxy`](https://esphome.io/components/bluetooth_proxy/), [Bermuda](https://github.com/agittins/bermuda). Full sources in [`../REFERENCES.md`](../REFERENCES.md).

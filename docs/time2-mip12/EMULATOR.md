@@ -234,9 +234,6 @@ sudo nmcli con up "Wired connection 1"
 
 ---
 
-## Notes on stealth/ethics
+## Notes
 
-This is interoperability work on **hardware you own**, to avoid depending on a
-discontinued cloud service. The vendor app is used as a **reference client**: its traffic
-is observed, not modified, and **no vendor binaries are redistributed** (see
-[THIRD-PARTY](../../THIRD-PARTY.md)).
+The vendor app is used as a **reference client**: its traffic is observed, not modified, and no vendor binaries are redistributed (see [THIRD-PARTY](../../THIRD-PARTY.md) and [LEGAL](../LEGAL.md)).

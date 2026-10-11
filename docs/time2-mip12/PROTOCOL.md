@@ -272,29 +272,16 @@ Note the **native** names differ from the app's Java-side names (`mac`, `ip`, `d
 `option`): the app's Java layer passes its own names into the JNI, and the **native layer
 remaps them**. The dict that actually goes on the wire uses the names above.
 
-### ✅ Resolution
-
-The camera did **not** process `MainCmd=700` on `:5000`: the command is a **broadcast on
-`:2627`**. Once that was corrected the write was accepted and the camera joined WiFi.
-Full details in **[WIFI.md](WIFI.md)**.
+`MainCmd=700` is a **broadcast on `:2627`**, not the video socket. Full frame in [WIFI.md](WIFI.md).
 
 ---
 
 ## Tools
 
-`../../time2-mip12/` contains:
-
 | File | Purpose |
 |------|---------|
-| `p2pcam/` | Vendored, MIT-licensed HeKai/HK client (discovery, handshake, MJPEG). **Includes the `local_port=0` fix.** |
-| `tools/probe_config.py` | Send an arbitrary bencoded `MainCmd` (dict-style read) and print the reply. |
-| `tools/wifi_setup.py` | **The solved `SetLanWifi` broadcast**: builds and sends the 167-byte frame. |
-| `tools/wifi_sweep.py` | Sweep envelopes / probe `703` SSID scans. |
-| `tools/wifi_brute.py` | Sweep `InnerCmd`/command-id variants when probing. |
+| `../../time2-mip12/p2pcam/` | HeKai/HK client (discovery, handshake, MJPEG; includes the `local_port=0` fix) |
+| `../../time2-mip12/tools/wifi_setup.py` | The `SetLanWifi` broadcast |
+| `../../time2-mip12/tools/probe_config.py` | Send an arbitrary `MainCmd`, print the reply |
 
-## Attribution
-
-- Protocol insight builds on [`indykoning/PyPI_p2pcam`](https://github.com/indykoning/PyPI_p2pcam)
-  (MIT) and the `devmlb` fork/PR.
-- SDK headers were studied from [`jameshilliard/HKiPhoneSDKDemo20160621`](https://github.com/jameshilliard/HKiPhoneSDKDemo20160621)
-  and [`jameshilliard/android-p2p-sdk3.0`](https://github.com/jameshilliard/android-p2p-sdk3.0).
+Protocol insight builds on [`indykoning/PyPI_p2pcam`](https://github.com/indykoning/PyPI_p2pcam) (MIT); SDK headers from [`jameshilliard/HKiPhoneSDKDemo20160621`](https://github.com/jameshilliard/HKiPhoneSDKDemo20160621) and [`jameshilliard/android-p2p-sdk3.0`](https://github.com/jameshilliard/android-p2p-sdk3.0).

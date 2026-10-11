@@ -1,8 +1,8 @@
-# Lenovo MIIX 520-12IKB ("Miix Pad")
+# Lenovo MIIX 520: an honest negative result
 
-A 2018 Lenovo detachable Windows tablet. Not orphaned by a dead cloud service —
-it's orphaned by **two silicon problems Linux has never solved**, and by one
-misdiagnosis that cost a week.
+This one isn't orphaned by a dead cloud. It's orphaned by silicon Linux never solved: the fingerprint sensor and touchscreen are both driverless, and one bring-up trick bricks the EC. Written down so you don't repeat the week it cost us.
+
+2018 detachable (i5-8250U). Method: none that works. [`FINGERPRINT.md`](FINGERPRINT.md) and [`TOUCHSCREEN.md`](TOUCHSCREEN.md) record exactly where each path dies.
 
 | | |
 |---|---|
@@ -13,8 +13,8 @@ misdiagnosis that cost a week.
 | Tested on | Fedora 44, KDE Plasma, kernel **7.2.9-200.fc44** |
 | Previous kernel tested | 7.0.12-201.fc44 |
 
-Both touch-capable subsystems — the **fingerprint sensor** and the **on-display
-touchscreen** — work under the Lenovo OEM drivers on the Windows side. **Neither
+Both touch-capable subsystems (the **fingerprint sensor** and the **on-display
+touchscreen**) work under the Lenovo OEM drivers on the Windows side. **Neither
 works on Linux.** What this directory documents is *why*, how far the reverse
 engineering got, and one hardware hazard that will cost you your fan control if
 you walk into it blind.
@@ -31,7 +31,7 @@ you walk into it blind.
 | Dock trackpad | **SIPODEV `17EF:60BB`** | USB HID | ✅ **works** (see [`TOUCHSCREEN.md`](TOUCHSCREEN.md)) | ✅ works |
 
 > **The dock trackpad is not a touchscreen.** That distinction is the single
-> most expensive mistake in this document's history — see
+> most expensive mistake in this document's history, see
 > [`TOUCHSCREEN.md`](TOUCHSCREEN.md).
 
 ---
@@ -65,7 +65,7 @@ through the PCH's MMIO window shares the LPC bus with the EC. The EC locks up.
 ## Why publish a partial result
 
 The fingerprint work did not end in a working scanner. It ended in a documented
-answer to *"is this even possible?"* — and that answer is **no, not on current
+answer to *"is this even possible?"*, and that answer is **no, not on current
 Linux**, for reasons that are worth an afternoon of someone's time to not
 rediscover.
 

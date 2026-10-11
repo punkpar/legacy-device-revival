@@ -1,9 +1,8 @@
-# KAWA MINI 3 Pro dashcam: RTSP and a root shell on a SigmaStar dashcam
+# KAWA MINI 3 Pro: a dashcam that's wide open
 
-The **KAWA MINI 3 Pro** (project `CJ4513`, FCC ID `2AZWZ-MINI3`) is a cheap 2K dashcam
-built on a **SigmaStar** SoC running a BusyBox Linux. Out of the box it is app-only: the
-vendor app (`com.kawa.auto`) joins the camera's own WiFi access point and previews the
-stream. There is no documented local interface.
+No exploit needed for this dashcam, sweetie. It leaks everything by accident: unauthenticated RTSP, an empty-password root shell, and its whole filesystem over HTTP.
+
+Cheap 2K dashcam (project `CJ4513`, SigmaStar SoC, BusyBox Linux), app-only out of the box. Method: catalogue what's already exposed, and close the holes.
 
 In practice it exposes **three unauthenticated interfaces** on its access point: an
 **RTSP** stream, a **telnet root shell** (empty password) and an **HTTP server that serves

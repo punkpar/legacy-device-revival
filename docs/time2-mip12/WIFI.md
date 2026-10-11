@@ -200,18 +200,6 @@ path.
 
 ---
 
-## 6. Timeline of the "solved" claim
+## 6. How it was found
 
-For transparency: the earlier state of this page said the command was
-*"identified but not working"*. That was accurate at the time. The resolution was
-purely a matter of getting a capture:
-
-| Stage | Result |
-|-------|--------|
-| Static RE of `libcaptetown1.so` | found `MainCmd=700` and the key names: **correct** |
-| Live testing on `:5000` | nothing happened: **wrong socket** |
-| Emulated the native encode path | recovered the body, still wrong framing |
-| **Captured the vendor app** | revealed **broadcast `:2627`** + `MacIP`-is-wired: **done** |
-
-The lesson, if there is one: the static work found the *what*; only a capture found
-the *where*.
+Static analysis of `libcaptetown1.so` found `MainCmd=700` and the key names (the *what*). Only a live capture of the vendor app ([EMULATOR.md](EMULATOR.md)) revealed the *where*: broadcast `:2627`, not the video socket.

@@ -1,9 +1,8 @@
-# Tesco Hudl 2: root on a hardware-locked Bay Trail tablet
+# Tesco Hudl 2: root without unlocking the bootloader
 
-The **Tesco Hudl 2** is a 2014 Android tablet (Pegatron board `octagon`, Intel Atom
-Bay Trail, Android 5.1 Lollipop). Tesco discontinued the line and switched off the Hudl
-services and app store, so the tablet is fully orphaned: no store, no updates, stuck on
-Android 5.1 with a 2013-era WebView.
+The bootloader on this tablet is hardware-locked, so the usual unlock-flash-root route is welded shut. A public kernel bug aimed at a setuid binary gets you in anyway. Funny how the locked door always has a window.
+
+2014 Bay Trail tablet (Pegatron `octagon`, Atom Z3735x, Android 5.1), orphaned when Tesco killed the store and services. Method: Dirty COW (CVE-2016-5195) over `run-as`, plus an honest account of where that root stops.
 
 Stock, it has **no root, no custom recovery and a hardware-locked bootloader** (Intel
 Bay Trail). This page documents how it was rooted **without** unlocking the bootloader,
